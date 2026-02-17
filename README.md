@@ -1,31 +1,57 @@
 # xordb
 
-A semantic cache powered by Hyperdimensional Computing (HDC).
-Written in Go. Zero dependencies. No server required.
+```
+  ██╗  ██╗ ██████╗ ██████╗ ██████╗ ██████╗ 
+  ╚██╗██╔╝██╔═══██╗██╔══██╗██╔══██╗██╔══██╗
+   ╚███╔╝ ██║   ██║██████╔╝██║  ██║██████╔╝
+   ██╔██╗ ██║   ██║██╔══██╗██║  ██║██╔══██╗
+  ██╔╝ ██╗╚██████╔╝██║  ██║██████╔╝██████╔╝
+  ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚═════╝ 
+```
+
+**The fastest binary semantic cache for LLM apps.**  
+*Offline. Private. Zero cloud costs.*
+
+Built on Hyperdimensional Computing. Written in Go.
 
 ---
 
-## The problem
+## Why I built this
 
-Every app that calls an LLM pays per request. Most real-world usage repeats the
-same questions in slightly different words:
+While building LLM agents, I kept running into the same inference cost problem.
+Every user query — no matter how repetitive — fires a full round-trip to the
+model. You're paying for the same answer over and over.
+
+The obvious fix is caching. But normal caches match on exact strings, and users
+never ask the same question the same way twice:
 
 ```
 "What is the capital of India?"
-"India's capital city?"
-"Tell me the capital city of India"
+"capital city of india"
+"India's capital?"
 ```
 
-A normal cache misses all three — they are different strings.
-xordb hits all three — it understands they mean the same thing.
+Three different strings. Same intent. A hash-based cache misses all of them.
+
+Even the "smart" workaround of structuring prompts with a static system message
+first and the dynamic user query last — hoping the LLM provider's KV-cache
+gives you a prefix hit — barely helps. The user portion still varies, the cache
+miss rate stays high, and you're still paying per token.
+
+I needed a cache that understands *meaning*, not strings. One that runs locally,
+adds zero latency from network calls, and doesn't send my users' queries to yet
+another third-party API.
+
+So I built xordb.
 
 ---
 
 ## How it works
 
-Text is encoded into a **hypervector**: a 10,000-bit array where meaning is
-distributed across every bit. Similarity between two hypervectors is measured
-with Hamming distance — a bitwise operation that runs in nanoseconds.
+xordb encodes text into a **hypervector** — a 10,000-bit binary array where
+meaning is distributed across every bit. Similarity between two hypervectors is
+measured with Hamming distance: a bitwise XNOR + popcount that runs in
+nanoseconds.
 
 Three primitives power everything:
 
@@ -35,340 +61,172 @@ Three primitives power everything:
 | `Bind`    | Associate concepts ("A means B") | XOR (self-inverse) |
 | `Similarity` | How alike are two things? | popcount / Hamming |
 
-Text is encoded using character n-grams with positional binding — no external
-ML model, no tokenizer, no network call. The encoder is deterministic and runs
-entirely in-process.
+xordb ships with two encoding modes:
+
+| Mode | How it works | Quality | Dependencies |
+|------|-------------|---------|-------------|
+| **Built-in** (n-gram HDC) | Character n-grams with positional binding | Good for surface-level similarity | Zero |
+| **MiniLM** (`xordb/embed`) | Local ONNX transformer model → binary projection | Near-OpenAI semantic quality | `onnxruntime_go` + model file |
+
+Pick the one that fits your use case. The core library stays zero-dependency
+either way.
 
 ---
 
-## Current status
+## Real-world scenarios
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 1 | Core HDC engine (`hdc/`) | Done |
-| 2 | Text encoder (`hdc/encoder.go`) | Done |
-| 3 | Semantic cache (`cache/`) | Done |
-| 4 | Public API (`xdb.go`) | Done |
-| 5 | Demo CLI + benchmarks | Done |
-| 6 | Persistence, float vectors, HTTP mode | Stretch goal |
+### LLM response caching
+
+The primary use case. Your agent answers "what is the capital of India?" once,
+and every rephrase — "India's capital city?", "capital of india", "tell me
+india capital" — hits the cache instead of burning another API call.
+
+```go
+db.Set("what is the capital of india", llmResponse)
+
+v, ok, _ := db.Get("capital city of india")
+// ok=true, v=llmResponse — saved one LLM call
+```
+
+At 1000 queries/day with 60% semantic overlap, that's 600 fewer inference calls.
+At $0.01/call, ~$180/month saved from a single cache.
+
+### Multi-turn agent deduplication
+
+Agents loop. A ReAct agent might re-derive the same tool call three times in one
+conversation. A planning agent might re-ask the same sub-question across
+different branches. xordb catches these before they hit the model.
+
+```go
+// Agent asks a sub-question during planning
+db.Set("what are the business hours of Acme Corp", toolResult)
+
+// Later in the same conversation, different phrasing
+v, ok, _ := db.Get("Acme Corp business hours")
+// ok=true — no redundant tool call
+```
+
+### RAG retrieval caching
+
+Retrieval-Augmented Generation pipelines run an embedding + vector search on
+every query. If your users ask similar questions, you're re-retrieving the same
+documents. Cache the retrieval results:
+
+```go
+db.Set("how do I reset my password", retrievedChunks)
+
+db.Get("password reset instructions")
+// Cache hit — skip the entire retrieval pipeline
+```
+
+### Prompt template deduplication
+
+When you're generating prompts from templates, slight variations in user input
+produce "different" prompts that are semantically identical:
+
+```
+"Summarize this article: [article about climate change]"
+"Please summarize the following article: [same article about climate change]"
+```
+
+xordb catches these because the meaning hasn't changed, even though the wrapper
+text did.
+
+### Chatbot FAQ matching
+
+Pre-populate the cache with your FAQ pairs. User questions get matched
+semantically without needing a full NLP pipeline:
+
+```go
+db.Set("what is your refund policy", "30-day money-back guarantee")
+db.Set("how do I contact support", "Email support@example.com")
+
+db.Get("can I get a refund")       // hits refund policy
+db.Get("how to reach your team")   // hits contact support
+```
+
+### Edge / offline inference
+
+xordb runs entirely in-process. No Redis, no server, no network. This makes it
+ideal for:
+
+- **Mobile apps** — cache LLM responses on-device
+- **IoT / embedded** — edge devices with intermittent connectivity
+- **Privacy-sensitive apps** — user queries never leave the process
+- **Air-gapped environments** — no external dependencies at runtime
 
 ---
 
 ## Quick start
 
+### Mode 1: Zero dependencies (built-in n-gram encoder)
+
+Good for fuzzy string matching, typo tolerance, and surface-level similarity.
+No setup required.
+
 ```go
 import "xordb"
 
-db := xordb.New()
+db := xordb.New(xordb.WithThreshold(0.65))
 
 db.Set("what is the capital of india", "Delhi")
 
-// Exact hit
-v, ok, sim := db.Get("what is the capital of india")
-// ok=true, sim=1.0, v="Delhi"
-
-// Semantic hit (lower threshold needed for n-gram HDC)
-db2 := xordb.New(xordb.WithThreshold(0.65))
-db2.Set("what is the capital of india", "Delhi")
-
-v, ok, sim = db2.Get("capital city of india")
+v, ok, sim := db.Get("capital city of india")
 // ok=true, sim≈0.72, v="Delhi"
 
-// Miss
 _, ok, _ = db.Get("how do you bake a chocolate cake")
-// ok=false
+// ok=false — unrelated, correctly rejected
 ```
 
----
+### Mode 2: Semantic quality (MiniLM encoder)
 
-## Use Cases
+Real semantic understanding. "author of ramayana" matches "who wrote ramayana"
+even though the words barely overlap. Runs a quantized MiniLM-L6-v2 model
+locally via ONNX Runtime — no API calls, no cloud, no per-query cost.
 
-xordb is a general-purpose semantic cache that works anywhere you need to find similar things, not just exact matches. Here are practical use cases across many domains:
-
-### LLM & AI Applications
-
-**LLM Response Caching**
-```go
-// Cache expensive LLM API calls
-db.Set("what is the capital of india?", "Delhi")
-db.Get("capital city of india") // ✅ Cache hit - saves API cost
+```bash
+# One-time: download the model (~90MB)
+go run xordb/embed/cmd/xordb-model download
 ```
 
-**Chatbot FAQ Systems**
 ```go
-// Pre-populate with FAQs, match user questions semantically
-db.Set("what is your refund policy?", "30-day money-back guarantee")
-db.Get("refund policy") // ✅ Matches
-```
+import (
+    "xordb"
+    "xordb/embed"
+)
 
-**Translation Memory**
-```go
-// Reuse translations for similar source text
-db.Set("Hello world", "Hola mundo")
-db.Get("Hello, world!") // ✅ Cache hit
-```
-
-### Software Development
-
-**Code Similarity Detection**
-```go
-db.Set("function add(a, b) { return a + b; }", "file1.js")
-db.Get("function add(x, y) { return x + y; }") // ✅ Detects similar code
-```
-
-**Test Case Deduplication**
-```go
-// Avoid running similar tests
-db.Set("test user login with email", testResult)
-if _, hit, _ := db.Get("test login with email address"); hit {
-    skipTest() // Similar test already ran
+enc, err := embed.NewMiniLMEncoder()
+if err != nil {
+    log.Fatal(err)
 }
+defer enc.Close()
+
+db := xordb.NewWithEncoder(enc,
+    xordb.WithThreshold(0.75),
+    xordb.WithCapacity(10000),
+)
+
+db.Set("what is the capital of india", "Delhi")
+db.Set("who wrote ramayana", "Valmiki")
+
+v, ok, sim := db.Get("india's capital city")
+// ok=true, sim≈0.85+, v="Delhi"
+
+v, ok, sim = db.Get("author of ramayana")
+// ok=true — real semantic match, not just string overlap
 ```
 
-**Log Pattern Matching**
-```go
-// Route similar log entries to same handlers
-db.Set("ERROR: database connection failed", "db_error")
-db.Get("ERROR: db connection failure") // ✅ Matches pattern
-```
+### How to choose
 
-### Data Processing
-
-**Document Deduplication**
-```go
-// Detect duplicate or near-duplicate documents
-db.Set(documentContent, documentID)
-if _, hit, _ := db.Get(newDocument); hit {
-    flagAsDuplicate()
-}
-```
-
-**Streaming Deduplication**
-```go
-// "Have I seen this before?" in O(1) per item
-// Perfect for log processing, data pipelines
-if _, hit, _ := db.Get(dataItem); !hit {
-    process(dataItem)
-    db.Set(dataItem, true)
-}
-```
-
-**Content Clustering**
-```go
-// Group similar content together
-for _, item := range items {
-    if cluster, hit, _ := db.Get(item); hit {
-        addToCluster(item, cluster)
-    } else {
-        db.Set(item, newClusterID())
-    }
-}
-```
-
-### Web & API Development
-
-**API Response Caching**
-```go
-// Cache any expensive API call, not just LLMs
-db.Set("GET /api/users?filter=active", apiResponse)
-db.Get("GET /api/users?status=active") // ✅ Cache hit
-```
-
-**Search Query Expansion**
-```go
-// Store query → results mappings
-db.Set("best restaurants NYC", results1)
-db.Get("NYC dining recommendations") // ✅ Returns cached results
-```
-
-**Session & State Caching**
-```go
-// Cache user sessions, feature flags, configs by context
-db.Set("user_context_v1", sessionData)
-db.Get("user_context_v2") // ✅ Similar context
-```
-
-### E-commerce & Recommendations
-
-**Product Search**
-```go
-// "laptop" matches "notebook computer"
-db.Set("laptop", productResults)
-db.Get("notebook computer") // ✅ Cache hit
-```
-
-**Review Deduplication**
-```go
-// Detect duplicate reviews
-db.Set(reviewText, reviewID)
-db.Get(similarReviewText) // ✅ Flags duplicate
-```
-
-**Recommendation Caching**
-```go
-// Cache recommendations for similar user profiles
-db.Set(userProfile, recommendations)
-db.Get(similarProfile) // ✅ Reuse recommendations
-```
-
-### Security & Monitoring
-
-**Spam/Abuse Detection**
-```go
-// Store known spam patterns
-db.Set("click here for free money!!!", "spam")
-db.Get("CLICK HERE FOR FREE MONEY") // ✅ Detects variation
-```
-
-**Anomaly Detection**
-```go
-// Bundle known-good events, flag vectors far from bundle
-goodEvents := bundle(event1, event2, event3)
-if similarity(newEvent, goodEvents) < threshold {
-    flagAsAnomaly()
-}
-```
-
-**Fraud Detection**
-```go
-// Match similar transaction patterns
-db.Set(transactionPattern, "fraud")
-db.Get(similarPattern) // ✅ Flags potential fraud
-```
-
-### Healthcare & Legal
-
-**Symptom Matching**
-```go
-// "headache" matches "head pain"
-db.Set("headache", diagnosisPath)
-db.Get("head pain") // ✅ Same diagnosis path
-```
-
-**Case Law Similarity**
-```go
-// Find similar legal cases
-db.Set(caseDescription, caseID)
-db.Get(similarCase) // ✅ Finds related cases
-```
-
-**Contract Clause Matching**
-```go
-// Match similar contract clauses
-db.Set(clauseText, clauseID)
-db.Get(similarClause) // ✅ Finds matches
-```
-
-### IoT & Edge Computing
-
-**Sensor Data Deduplication**
-```go
-// Edge device: avoid sending duplicate readings
-if _, hit, _ := db.Get(sensorReading); !hit {
-    sendToCloud(sensorReading)
-    db.Set(sensorReading, true)
-}
-```
-
-**Device Configuration Caching**
-```go
-// Cache configs for similar device contexts
-db.Set(deviceContext, config)
-db.Get(similarContext) // ✅ Reuse config
-```
-
-### Gaming & Entertainment
-
-**Cheat Detection**
-```go
-// Detect similar behavior patterns
-db.Set(knownCheatPattern, "cheat")
-db.Get(playerBehavior) // ✅ Flags suspicious behavior
-```
-
-**Player Behavior Analysis**
-```go
-// Group similar player behaviors
-db.Set(playerBehavior, behaviorType)
-db.Get(similarBehavior) // ✅ Classifies behavior
-```
-
-### Education
-
-**Plagiarism Detection**
-```go
-// Detect similar essays/assignments
-db.Set(submission1, "original")
-db.Get(submission2) // ✅ Flags potential plagiarism
-```
-
-**Question Bank Matching**
-```go
-// "what is photosynthesis?" matches variations
-db.Set("what is photosynthesis?", answer)
-db.Get("explain photosynthesis") // ✅ Cache hit
-```
-
-### Email & Communication
-
-**Email Thread Grouping**
-```go
-// Group similar email subjects
-db.Set("Re: Project update", threadID)
-db.Get("RE: project update") // ✅ Same thread
-```
-
-**Message Deduplication**
-```go
-// Avoid processing duplicate messages
-db.Set(messageContent, messageID)
-db.Get(similarMessage) // ✅ Flags duplicate
-```
-
-### Database & Query Optimization
-
-**SQL Query Caching**
-```go
-// Cache SQL queries (even with different formatting)
-db.Set("SELECT * FROM users WHERE active = 1", queryResult)
-db.Get("select * from users where active=1") // ✅ Cache hit
-```
-
-**Query Result Caching**
-```go
-// Cache expensive query results
-db.Set(queryDescription, results)
-db.Get(similarQuery) // ✅ Reuse results
-```
-
-### Future Applications (with HDC primitives)
-
-**Knowledge Graphs**
-```go
-// Bind relationships: "Delhi is-capital-of India"
-// Future: Associative store with Bind operations
-```
-
-**Few-shot Classification**
-```go
-// Bundle examples per class, classify by nearest bundle
-catExamples := bundle("cat image 1", "cat image 2", ...)
-dogExamples := bundle("dog image 1", "dog image 2", ...)
-// Classify by nearest bundle
-```
-
----
-
-## Why xordb Works Across Domains
-
-1. **Text-based keys**: Anything representable as a string works
-2. **Semantic similarity**: Finds meaning, not exact matches
-3. **Fast**: Sub-millisecond lookups
-4. **Zero dependencies**: Works anywhere Go runs
-5. **Embeddable**: No server needed
-6. **Thread-safe**: Works in concurrent systems
-
-**The pattern**: If you can represent it as a string and want to find similar strings, xordb can help. The HDC engine is domain-agnostic—it's just fast semantic similarity search.
+| | Built-in (n-gram) | MiniLM (`xordb/embed`) |
+|---|---|---|
+| **Dependencies** | Zero | `onnxruntime_go` + model file |
+| **Semantic quality** | Surface-level (word overlap) | Near-OpenAI (MTEB benchmarks) |
+| **"capital of india" ↔ "india's capital"** | ✅ hits (shared n-grams) | ✅ hits (semantic match) |
+| **"who wrote ramayana" ↔ "author of ramayana"** | ❌ misses (no word overlap) | ✅ hits (semantic match) |
+| **Encode latency** | ~500µs | ~5ms |
+| **Binary size** | ~2MB | ~2MB + 90MB model |
+| **Best for** | Typo tolerance, fuzzy matching, edge devices | LLM caching, RAG dedup, chatbot FAQ |
 
 ---
 
@@ -376,20 +234,40 @@ dogExamples := bundle("dog image 1", "dog image 2", ...)
 
 ### Creating a DB
 
+**With built-in encoder:**
+
 ```go
 db := xordb.New(opts ...Option)
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `WithDims(n int)` | `10000` | Hypervector dimension. Higher = more accurate, more memory. |
-| `WithThreshold(t float64)` | `0.82` | Minimum similarity for a cache hit. Range: `(0, 1]`. |
-| `WithCapacity(n int)` | `1024` | Max entries. Oldest entry is evicted when exceeded (LRU). |
-| `WithNGramSize(n int)` | `3` | Character n-gram window. Larger = more precise, less typo-tolerant. |
-| `WithSeed(s uint64)` | `0` | Encoder namespace seed. DBs with different seeds are incompatible. |
-| `WithStripPunctuation(v bool)` | `false` | Strip punctuation during normalization. Useful for NL queries. |
+| `WithDims(n)` | `10000` | Hypervector dimension. Higher = more accurate, more memory. |
+| `WithThreshold(t)` | `0.82` | Minimum similarity for a cache hit. Range: `(0, 1]`. |
+| `WithCapacity(n)` | `1024` | Max entries. Oldest evicted when exceeded (LRU). |
+| `WithNGramSize(n)` | `3` | Character n-gram window. |
+| `WithSeed(s)` | `0` | Encoder seed. DBs with different seeds are incompatible. |
+| `WithStripPunctuation(v)` | `false` | Strip punctuation before encoding. |
 
-`New` panics if any option is invalid (e.g. `Capacity=0`, `Threshold=0`, `Dims=0`).
+**With custom encoder (e.g. MiniLM):**
+
+```go
+db := xordb.NewWithEncoder(enc, opts ...Option)
+```
+
+Accepts any `hdc.Encoder` implementation. Only `WithThreshold` and `WithCapacity`
+are used — encoding options are controlled by the encoder itself.
+
+### MiniLM encoder options
+
+```go
+enc, err := embed.NewMiniLMEncoder(
+    embed.WithModelPath("/path/to/model.onnx"),  // default: auto-detect
+    embed.WithMaxSeqLen(128),                      // default: 128
+    embed.WithBinaryDims(10000),                   // default: 10000
+    embed.WithProjectionSeed(0xDBCAFE),            // default: deterministic
+)
+```
 
 ### Methods
 
@@ -397,19 +275,18 @@ db := xordb.New(opts ...Option)
 db.Set(key string, value any)
 ```
 Store any value under a string key. If the exact key exists, update it and
-promote it to most-recently-used. Encodes the key outside the lock.
+promote to most-recently-used.
 
 ```go
 db.Get(key string) (value any, hit bool, similarity float64)
 ```
-Return the value stored under the most similar key at or above the threshold.
-Returns `(nil, false, 0)` on a miss. The matched entry is promoted to MRU on a hit.
+Return the value under the most similar key at or above the threshold.
+Returns `(nil, false, 0)` on a miss.
 
 ```go
 db.Delete(key string) bool
 ```
 Remove the entry with the **exact** key string. Returns true if found.
-Note: Delete is exact-match only. Pass the same string used in `Set`.
 
 ```go
 db.Len() int
@@ -419,7 +296,6 @@ Current number of cached entries.
 ```go
 db.Stats() xordb.Stats
 ```
-Point-in-time snapshot:
 
 ```go
 type Stats struct {
@@ -434,77 +310,107 @@ type Stats struct {
 
 ---
 
-## Test commands
+## Model management
+
+The MiniLM encoder needs a one-time model download (~90MB). The `xordb-model`
+CLI handles this:
 
 ```bash
-# Run all tests
-go test ./...
+# Download the model
+go run xordb/embed/cmd/xordb-model download
 
-# Run tests with verbose output
-go test -v ./...
+# Check status
+go run xordb/embed/cmd/xordb-model info
 
-# Run tests for a specific package
-go test -v ./hdc/
-go test -v ./cache/
-go test -v .          # root package (xordb)
-
-# Run benchmarks
-go test -bench=. -benchmem ./...
-go test -bench=. -benchmem ./hdc/
-go test -bench=. -benchmem ./cache/
-go test -bench=. -benchmem .
-
-# Race detector
-go test -race ./...
-
-# Run the demo
-go run ./cmd/demo/
-
-# Run the demo with interactive REPL
-go run ./cmd/demo/ -repl
+# Print model path
+go run xordb/embed/cmd/xordb-model path
 ```
+
+The model is stored at `~/.local/share/xordb/models/all-MiniLM-L6-v2.onnx`
+(or `$XDG_DATA_HOME/xordb/models/`). Override with `XORDB_MODEL_PATH`.
 
 ---
 
 ## Performance
 
-Measured on Intel i7-13620H (16 threads). All allocations are heap — a future
-`BindInto` / object-pool path would reduce this significantly.
-
 ### HDC primitives (`hdc/`)
-
-| Operation | Time | Allocs | Notes |
-|-----------|------|--------|-------|
-| `Similarity` | **67 ns** | 0 | Pure POPCNT, no alloc |
-| `Bind` | 365 ns | 1 × 1.25 KB | XOR + allocation |
-| `Permute` | 520 ns | 1 × 1.25 KB | Clone + cyclic shift |
-| `Bundle(10)` | 141 µs | 2 | Majority vote, 10 vecs × 10k bits |
-| `Random` | 14 µs | 2 | Seeded PRNG + alloc |
-
-### Encoder (`hdc/`)
-
-| Input | Time | Notes |
-|-------|------|-------|
-| Short (~29 chars) — cold | 510 µs | Symbol table populated on first call |
-| Short (~29 chars) — warm | 521 µs | Symbol lookups are cached; encoding dominates |
-| Medium (~180 chars) | 2.6 ms | Linear with n-gram count |
-| Long (~530 chars) | 14 ms | Chunked encoding, many Bundle calls |
-
-Encoding is allocation-heavy (145 allocs / 258 KB for a short query). The root
-cause is every `Bind` and `Permute` allocating a new `[]uint64`. A scratch-buffer
-pool would cut this roughly 10×.
-
-### Cache (`cache/`, `xordb`)
 
 | Operation | Time | Notes |
 |-----------|------|-------|
-| `DB.Set` | 532 µs | Encode (446 µs) + lock + list insert |
-| `DB.Get` — 100 entries | 460 µs | Encode + 100 × 67 ns scan |
-| `DB.Get` — 1000 entries | 820 µs | Encode + 1000 × 67 ns scan |
-| `DB.Get` — 10000 entries | 2.2 ms | Encode + 10000 × 67 ns scan |
+| `Similarity` | **67 ns** | Pure POPCNT, no alloc |
+| `Bind` | 365 ns | XOR + allocation |
+| `Permute` | 520 ns | Clone + cyclic shift |
+| `Bundle(10)` | 141 µs | Majority vote, 10 vecs × 10k bits |
 
-The encoding (≈460 µs) dominates for any cache size. The linear scan adds ≈67 µs
-per 1000 entries — at 10,000 entries the scan contributes ≈670 µs (total ~2.2 ms).
+### Cache lookups
+
+| Operation | Time | Notes |
+|-----------|------|-------|
+| `Set` (n-gram) | 532 µs | Encode + insert |
+| `Get` — 100 entries | 460 µs | Encode + scan |
+| `Get` — 1,000 entries | 820 µs | Encode + scan |
+| `Get` — 10,000 entries | 2.2 ms | Encode + scan |
+
+Encoding dominates (~460µs for n-gram, ~5ms for MiniLM). The linear scan adds
+~67µs per 1,000 entries.
+
+### Benchmark: xordb vs GPTCache
+
+75-query dataset with 4 categories: 40 true semantic matches, 15 true negatives
+(completely unrelated), 10 hard negatives (same topic, different question), and
+10 edge cases (abbreviations, indirect phrasing). Both Docker containers run on
+the same machine, same dataset, same rules.
+
+|  | **xordb (n-gram)** | **xordb (MiniLM)** | **GPTCache** |
+|---|---|---|---|
+| **Accuracy** | 64.0% (48/75) | **86.7% (65/75)** | 81.3% (61/75) |
+| **True positives** | 32 | **42** | 43 |
+| **True negatives** | 16 | **23** | 18 |
+| **False positives** | 9 | **2** | 7 |
+| **False negatives** | 18 | 8 | 7 |
+| **Avg latency** | **536µs** | 18.8ms | 285.4ms |
+| **Heap (reported)** | **1.21 MB** | 23.17 MB | 6.32 MB * |
+| **RSS (actual)** | **6.38 MB** | 192.64 MB † | 320.00 MB |
+| **Dependencies** | **0** | onnxruntime + model | gptcache, faiss, onnxruntime, numpy |
+
+\* GPTCache heap measured via Python `tracemalloc`, which does not capture
+FAISS/ONNX/SQLite C++ allocations. RSS reflects the true cost.
+
+† MiniLM RSS includes the ONNX Runtime engine (~170 MB) and the loaded model
+weights. This is a fixed one-time cost — it does not grow with cache size. The
+Go heap (23 MB) is the projector's hyperplane matrix + tokenizer vocabulary.
+
+**Category breakdown:**
+
+|  | **xordb (n-gram)** | **xordb (MiniLM)** | **GPTCache** |
+|---|---|---|---|
+| match (40) | 28/40 | **39/40** | **39/40** |
+| neg (15) | 13/15 | **15/15** | **15/15** |
+| hard-neg (10) | 3/10 | **8/10** | 3/10 |
+| edge (10) | 4/10 | 3/10 | **4/10** |
+
+Key takeaways:
+
+- **MiniLM wins on accuracy** — 86.7% vs GPTCache's 81.3%, with only 2 false
+  positives vs GPTCache's 7. It correctly rejects "speed of light" vs "speed of
+  sound" while GPTCache doesn't.
+- **N-gram wins on speed** — 536µs/query with zero dependencies and 6 MB RSS.
+  If your paraphrases share words, this is all you need.
+- **GPTCache is 15x slower** than MiniLM per query (285ms vs 19ms), largely due
+  to Python overhead and FAISS index lookups.
+- **RSS tells the real memory story.** GPTCache reports 6.3 MB via Python
+  `tracemalloc`, but the actual process RSS is **320 MB** — FAISS, ONNX Runtime,
+  SQLite, and numpy all allocate outside Python's tracked heap. xordb n-gram uses
+  6.4 MB total. xordb MiniLM uses 193 MB (mostly the ONNX engine, fixed cost).
+- **All three struggle with edge cases** — abbreviations like "ML" → "machine
+  learning" and indirect phrasing like "why do apples fall" → "gravity" are hard
+  for any embedding model at this size.
+
+Reproduce it yourself:
+
+```bash
+bash benchmarks/run_comparison.sh
+```
 
 ---
 
@@ -512,60 +418,104 @@ per 1000 entries — at 10,000 entries the scan contributes ≈670 µs (total ~2
 
 ```
 xordb/
-├── xdb.go              Public API: DB, Option funcs, Stats
+├── xdb.go                Public API: New, NewWithEncoder, Options, Stats
 ├── xdb_test.go
 │
 ├── hdc/
-│   ├── vector.go       Vector type: Bundle, Bind, Similarity, Permute, Clone
-│   ├── random.go       Seeded random hypervector generation
-│   ├── encoder.go      Encoder interface, NGramEncoder, Config, symbolTable
-│   ├── normalize.go    normalize(), splitSentences()
-│   ├── hdc_test.go
-│   └── encoder_test.go
+│   ├── vector.go         Vector type: Bundle, Bind, Similarity, Permute
+│   ├── random.go         Seeded random hypervector generation
+│   ├── encoder.go        Encoder interface + NGramEncoder
+│   ├── pool.go           sync.Pool buffer recycling for encode ops
+│   └── normalize.go      Text normalization
 │
 ├── cache/
-│   ├── cache.go        Cache: Set, Get, Delete, Len, Stats, LRU eviction
+│   ├── cache.go          Cache: Set, Get, Delete, LRU eviction
 │   └── cache_test.go
 │
-└── cmd/
-    └── demo/
-        └── main.go     HDC primitives demo
+├── embed/                        ← separate Go module (xordb/embed)
+│   ├── encoder.go                MiniLMEncoder: ONNX inference + projection
+│   ├── projection.go             Random hyperplane LSH (float32 → binary)
+│   ├── tokenizer.go              BERT WordPiece tokenizer
+│   ├── vocab.go                  Embedded vocabulary (30k tokens, ~227KB)
+│   ├── cmd/xordb-model/main.go   Model download CLI
+│   └── go.mod                    Depends on onnxruntime_go + xordb
+│
+├── cmd/demo/
+│   └── main.go           Interactive demo
+│
+└── go.mod                Zero dependencies
 ```
+
+The core `xordb` module has **zero dependencies**. The `embed/` module is a
+separate Go module that adds `onnxruntime_go` for local ML inference. You only
+pull in the dependency if you import `xordb/embed`.
 
 ---
 
 ## Known limitations
 
-**N-gram HDC is not transformer-quality.**
-Character n-grams capture surface similarity, not deep semantics. Queries that
-share sentence structure but differ in meaning (e.g. "capital of India" vs
-"capital of Nepal") score closer together than they ideally should (measured:
-~0.77 vs ~0.72 for an India paraphrase at default dims=10000). The default
-threshold of 0.82 avoids most false positives but also misses looser paraphrases.
+**N-gram encoder is not transformer-quality.** Character n-grams capture surface
+similarity. "capital of India" vs "capital of Nepal" score ~0.77 because they
+share most characters. The default threshold of 0.82 avoids false positives but
+also misses looser paraphrases. Use the MiniLM encoder for real semantic matching.
 
-**Practical threshold guidance:**
+**Linear scan.** The cache does a full scan on every `Get`. At 10,000 entries
+this is ~2ms — fine for most caching use cases. LSH indexing is planned for
+larger scales.
 
-| Threshold | Behaviour |
-|-----------|-----------|
-| `0.95 – 1.0` | Exact and near-exact matches only |
-| `0.82` (default) | Conservative — low false-positive risk |
-| `0.65 – 0.75` | Captures most paraphrases; higher false-positive risk |
-| `< 0.65` | Too permissive for production use |
+**MiniLM adds binary size.** The ONNX model is ~90MB, downloaded separately.
+The `onnxruntime` shared library must be available on the system.
 
-**The fix (Phase 6):** accept external float embeddings (OpenAI, BERT, etc.)
-projected to binary via random projection. The HDC engine becomes a fast binary
-index; the embedding model provides the semantic quality.
-
-**Encoding is allocation-heavy.**
-Each `Bind` and `Permute` call allocates a 1.25 KB `[]uint64`. For a 30-char
-query this is ~145 allocations / ~258 KB. An object-pool / in-place API is
-planned.
+**Encoding uses a buffer pool.** The n-gram encoder recycles `[]uint64` word
+buffers and `[]int32` count buffers via `sync.Pool`, with in-place vector
+operations (`permuteInto`, `bindInto`, `bundleInto`). Steady-state encodes
+allocate ~5 KB/op instead of ~140 KB/op. The pool warms up after the first few
+calls.
 
 ---
 
-## Stretch goals
+## Threshold guidance
 
-- Float vector input (external embeddings → binary projection)
-- Disk persistence (gob)
-- HTTP sidecar mode
-- SIMD assembly (`VPAND`, `VPOPCNTQ`)
+| Threshold | Behaviour |
+|-----------|-----------|
+| `0.90 – 1.0` | Exact and near-exact matches only |
+| `0.82` (default) | Conservative — low false-positive risk |
+| `0.70 – 0.80` | Good balance for MiniLM encoder |
+| `0.65 – 0.75` | Captures most paraphrases with n-gram encoder |
+| `< 0.60` | Too permissive for production |
+
+---
+
+## Running tests
+
+```bash
+# Core library (zero deps)
+go test ./...
+
+# Embed module
+cd embed && go test ./...
+
+# With race detector
+go test -race ./...
+
+# Benchmarks
+go test -bench=. -benchmem ./...
+
+# Integration tests (requires ONNX model)
+cd embed && go test -tags integration -v ./...
+
+# Demo
+go run ./cmd/demo/
+go run ./cmd/demo/ -repl
+```
+
+---
+
+## Roadmap
+
+- [ ] LSH indexing for sub-linear lookup at scale
+- [ ] Disk persistence (gob / flatbuffers)
+- [ ] HTTP sidecar mode
+- [ ] SIMD assembly (`VPAND`, `VPOPCNTQ`)
+- [ ] Additional model support (Nomic Embed, Arctic)
+- [ ] Batch encoding API
