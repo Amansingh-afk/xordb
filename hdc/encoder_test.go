@@ -339,3 +339,19 @@ func BenchmarkEncode_WarmSymbolTable(b *testing.B) {
 		enc.Encode(text)
 	}
 }
+
+// BenchmarkEncode_WarmPool exercises the encoder with both the symbol table
+// and the buffer pool warmed up, showing the steady-state allocation profile.
+func BenchmarkEncode_WarmPool(b *testing.B) {
+	enc := hdc.NewNGramEncoder(hdc.DefaultConfig())
+	text := "what is the capital of india"
+	// Warm up both the symbol table and the buffer pool.
+	for i := 0; i < 10; i++ {
+		enc.Encode(text)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		enc.Encode(text)
+	}
+}
