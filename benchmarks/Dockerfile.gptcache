@@ -1,0 +1,19 @@
+FROM python:3.11-slim
+
+WORKDIR /bench
+
+# Pin transformers to a version compatible with gptcache's Onnx embedding.
+# gptcache uses AlbertTokenizer.encode_plus() which was removed in transformers>=4.42.
+RUN pip install --no-cache-dir \
+    gptcache \
+    faiss-cpu \
+    onnxruntime \
+    numpy \
+    "transformers<4.42" \
+    sentencepiece \
+    protobuf
+
+COPY benchmarks/dataset.py .
+COPY benchmarks/gptcache_bench.py .
+
+CMD ["python3", "gptcache_bench.py"]

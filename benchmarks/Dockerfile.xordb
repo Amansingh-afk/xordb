@@ -1,0 +1,47 @@
+FROM golang:1.22
+
+WORKDIR /app
+
+# Install ONNX Runtime shared library.
+# onnxruntime_go v1.13.0 requires ORT_API_VERSION 20 → ORT 1.20.x.
+# yalue/onnxruntime_go looks for "onnxruntime.so" (no lib prefix), so we
+# create that symlink explicitly alongside the standard libonnxruntime.so.
+RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && \
+    wget -q https://github.com/microsoft/onnxruntime/releases/download/v1.20.1/onnxruntime-linux-x64-1.20.1.tgz && \
+    tar xzf onnxruntime-linux-x64-1.20.1.tgz && \
+    cp onnxruntime-linux-x64-1.20.1/lib/libonnxruntime*.so* /usr/local/lib/ && \
+    ln -sf /usr/local/lib/libonnxruntime.so /usr/local/lib/onnxruntime.so && \
+    ldconfig && \
+    rm -rf onnxruntime-linux-x64-1.20.1* && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ENV LD_LIBRARY_PATH=/usr/local/lib
+ENV ORT_LIB_PATH=/usr/local/lib/onnxruntime.so
+
+# Download MiniLM ONNX model.
+RUN mkdir -p /root/.local/share/xordb/models && \
+    wget -q -O /root/.local/share/xordb/models/all-MiniLM-L6-v2.onnx \
+    https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx
+
+# Copy root module.
+COPY go.mod ./
+COPY xdb.go ./
+COPY hdc/ hdc/
+COPY cache/ cache/
+
+# Copy embed module.
+COPY embed/go.mod embed/go.sum embed/
+COPY embed/*.go embed/
+COPY embed/testdata/ embed/testdata/
+
+# Copy benchmarks module.
+COPY benchmarks/go.mod benchmarks/go.sum benchmarks/
+COPY benchmarks/dataset.go benchmarks/
+COPY benchmarks/xordb_bench_test.go benchmarks/
+
+WORKDIR /app/benchmarks
+RUN go mod download
+
+ENV CGO_ENABLED=1
+
+CMD ["go", "test", "-v", "-run", "TestXorDB_(NGram|MiniLM)_Report", "-count=1", "-timeout=120s", "."]
