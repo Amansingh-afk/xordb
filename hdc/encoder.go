@@ -32,10 +32,12 @@ func DefaultConfig() Config {
 }
 
 // NGramEncoder implements Encoder using character n-grams and HDC.
-// It is safe for concurrent use.
+// It is safe for concurrent use. Internal encoding uses pooled buffers
+// to minimize heap allocations per Encode call.
 type NGramEncoder struct {
-	cfg Config
-	sym symbolTable
+	cfg  Config
+	sym  symbolTable
+	pool *bufPool
 }
 
 // NewNGramEncoder creates an NGramEncoder with the given Config.
@@ -58,6 +60,7 @@ func NewNGramEncoder(cfg Config) *NGramEncoder {
 			seed:  cfg.Seed,
 			table: make(map[rune]Vector),
 		},
+		pool: newBufPool(cfg.Dims),
 	}
 }
 
@@ -89,7 +92,22 @@ func (e *NGramEncoder) Encode(text string) Vector {
 	if len(vecs) == 0 {
 		return New(e.cfg.Dims)
 	}
-	return Bundle(vecs...)
+	if len(vecs) == 1 {
+		return vecs[0]
+	}
+	return e.bundlePooled(vecs)
+}
+
+// bundlePooled performs majority-vote bundling using pooled counts and result
+// buffers. The returned Vector owns its own data (safe to store in cache).
+func (e *NGramEncoder) bundlePooled(vecs []Vector) Vector {
+	counts := e.pool.getCounts()
+	dst := vectorFromBuf(e.cfg.Dims, e.pool.getWords())
+	bundleInto(dst, counts, vecs)
+	e.pool.putCounts(counts)
+	// dst now owns the word buffer — return it as an immutable Vector.
+	// We do NOT return this buffer to the pool because the caller stores it.
+	return dst
 }
 
 // encodeRunes encodes a rune slice using a sliding n-gram window.
@@ -97,6 +115,7 @@ func (e *NGramEncoder) Encode(text string) Vector {
 func (e *NGramEncoder) encodeRunes(runes []rune) Vector {
 	n := e.cfg.NGramSize
 	if len(runes) < n {
+		// Short input: bundle the raw symbol vectors.
 		vecs := make([]Vector, len(runes))
 		for i, r := range runes {
 			vecs[i] = e.sym.get(r)
@@ -104,30 +123,69 @@ func (e *NGramEncoder) encodeRunes(runes []rune) Vector {
 		if len(vecs) == 0 {
 			return New(e.cfg.Dims)
 		}
-		return Bundle(vecs...)
+		return e.bundlePooled(vecs)
 	}
 
 	count := len(runes) - n + 1
+
+	// Allocate pooled scratch vectors for each n-gram window result.
+	// These are intermediate — we bundle them and then return all buffers.
+	windowBufs := make([][]uint64, count)
 	vecs := make([]Vector, count)
 	for i := range vecs {
-		vecs[i] = e.encodeWindow(runes[i : i+n])
+		buf := e.pool.getWords()
+		windowBufs[i] = buf
+		vecs[i] = vectorFromBuf(e.cfg.Dims, buf)
+		e.encodeWindowInto(vecs[i], runes[i:i+n])
 	}
-	return Bundle(vecs...)
+
+	result := e.bundlePooled(vecs)
+
+	// Return all window scratch buffers to the pool.
+	for _, buf := range windowBufs {
+		e.pool.putWords(buf)
+	}
+
+	return result
 }
 
-// encodeWindow encodes a single n-gram window using position-sensitive binding.
+// encodeWindowInto encodes a single n-gram window into dst using
+// position-sensitive binding. Uses pooled scratch vectors internally.
+//
 // result = ρ⁰(h₀) XOR ρ¹(h₁) XOR … XOR ρⁿ⁻¹(hₙ₋₁)
 // Permuting each symbol by its position ensures "hel" ≠ "lhe".
-func (e *NGramEncoder) encodeWindow(runes []rune) Vector {
-	result := e.sym.get(runes[0])
+func (e *NGramEncoder) encodeWindowInto(dst Vector, runes []rune) {
+	dims := e.cfg.Dims
+	// Start with the first symbol (position 0, no permutation).
+	sym0 := e.sym.get(runes[0])
+	copy(dst.data, sym0.data)
+
+	if len(runes) == 1 {
+		return
+	}
+
+	// Two scratch buffers for permutation ping-pong.
+	scratchA := e.pool.getWords()
+	scratchB := e.pool.getWords()
+	defer e.pool.putWords(scratchA)
+	defer e.pool.putWords(scratchB)
+
+	permSrc := vectorFromBuf(dims, scratchA)
+	permDst := vectorFromBuf(dims, scratchB)
+
 	for i := 1; i < len(runes); i++ {
 		sym := e.sym.get(runes[i])
+		// Permute sym i times using ping-pong buffers.
+		copy(permSrc.data, sym.data)
 		for j := 0; j < i; j++ {
-			sym = sym.Permute()
+			permuteInto(permDst, permSrc)
+			// Swap src and dst for next iteration.
+			permSrc, permDst = permDst, permSrc
 		}
-		result = Bind(result, sym)
+		// After the loop, permSrc holds the final permuted result.
+		// XOR it into dst (which accumulates the bound n-gram).
+		bindInto(dst, dst, permSrc)
 	}
-	return result
 }
 
 // encodeChunked splits runes into overlapping 50% chunks and bundles the results.
@@ -155,7 +213,10 @@ func (e *NGramEncoder) encodeChunked(runes []rune) Vector {
 	if len(vecs) == 0 {
 		return New(e.cfg.Dims)
 	}
-	return Bundle(vecs...)
+	if len(vecs) == 1 {
+		return vecs[0]
+	}
+	return e.bundlePooled(vecs)
 }
 
 // symbolTable is a thread-safe lazy map from rune to a deterministic random Vector.

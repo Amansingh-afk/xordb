@@ -37,6 +37,17 @@ func FromWords(dims int, data []uint64) Vector {
 
 func (v Vector) Dims() int { return v.dims }
 
+// Data returns a copy of the underlying uint64 words.
+// This is useful for serialization or passing vectors across module boundaries.
+func (v Vector) Data() []uint64 {
+	out := make([]uint64, len(v.data))
+	copy(out, v.data)
+	return out
+}
+
+// NumWords returns the number of uint64 words needed to store dims bits.
+func NumWords(dims int) int { return numWords(dims) }
+
 // Clone returns an independent copy of v.
 func (v Vector) Clone() Vector {
 	data := make([]uint64, len(v.data))
@@ -117,6 +128,71 @@ func Similarity(a, b Vector) float64 {
 		diff += bits.OnesCount64(a.data[i] ^ b.data[i])
 	}
 	return 1.0 - float64(diff)/float64(a.dims)
+}
+
+// ── In-place operations (unexported, used by the pooled encoder) ─────────────
+
+// permuteInto writes the cyclic right-shift of src into dst.
+// dst.data must already be allocated with the correct length.
+// src and dst must have the same dims. dst and src must not alias.
+func permuteInto(dst, src Vector) {
+	w := len(src.data)
+	bit0 := src.data[0] & 1
+	for i := 0; i < w-1; i++ {
+		dst.data[i] = (src.data[i] >> 1) | ((src.data[i+1] & 1) << 63)
+	}
+	highBit := uint((src.dims - 1) % 64)
+	dst.data[w-1] = (src.data[w-1] >> 1) | (bit0 << highBit)
+}
+
+// bindInto writes XOR(a, b) into dst.data.
+// All three must have the same dims. dst.data must be pre-allocated.
+func bindInto(dst, a, b Vector) {
+	for i := range dst.data {
+		dst.data[i] = a.data[i] ^ b.data[i]
+	}
+}
+
+// bundleInto performs majority-vote of vecs into dst using the provided counts
+// scratch buffer. counts must have length >= dims and will be zeroed by this
+// function. dst.data must be pre-allocated and will be overwritten.
+func bundleInto(dst Vector, counts []int32, vecs []Vector) {
+	dims := dst.dims
+	// Zero counts (caller may have reused the buffer).
+	for i := 0; i < dims; i++ {
+		counts[i] = 0
+	}
+
+	for _, v := range vecs {
+		for w, word := range v.data {
+			base := w * 64
+			limit := 64
+			if base+limit > dims {
+				limit = dims - base
+			}
+			for b := 0; b < limit; b++ {
+				counts[base+b] += int32(word >> uint(b) & 1)
+			}
+		}
+	}
+
+	threshold := int32(len(vecs) / 2)
+	// Zero dst first.
+	for i := range dst.data {
+		dst.data[i] = 0
+	}
+	for i := 0; i < dims; i++ {
+		if counts[i] > threshold {
+			dst.data[i/64] |= 1 << uint(i%64)
+		}
+	}
+}
+
+// vectorFromBuf constructs a Vector that owns the given buffer directly
+// (no copy). The caller must not use buf after this call.
+func vectorFromBuf(dims int, buf []uint64) Vector {
+	zeroPadding(buf, dims)
+	return Vector{dims: dims, data: buf}
 }
 
 func numWords(dims int) int {
