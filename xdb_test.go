@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"xordb"
+	"xordb/hdc"
 )
 
 // ── construction ──────────────────────────────────────────────────────────────
@@ -68,6 +69,41 @@ func TestNew_InvalidNGramSize_Panics(t *testing.T) {
 		}
 	}()
 	xordb.New(xordb.WithNGramSize(0))
+}
+
+// ── NewWithEncoder ────────────────────────────────────────────────────────────
+
+func TestNewWithEncoder_CustomEncoder(t *testing.T) {
+	enc := hdc.NewNGramEncoder(hdc.DefaultConfig())
+	db := xordb.NewWithEncoder(enc)
+	if db == nil {
+		t.Fatal("NewWithEncoder must not return nil")
+	}
+	db.Set("hello", "world")
+	v, ok, _ := db.Get("hello")
+	if !ok || v != "world" {
+		t.Fatalf("custom encoder DB must work, got ok=%v v=%v", ok, v)
+	}
+}
+
+func TestNewWithEncoder_WithOptions(t *testing.T) {
+	enc := hdc.NewNGramEncoder(hdc.DefaultConfig())
+	db := xordb.NewWithEncoder(enc,
+		xordb.WithThreshold(0.70),
+		xordb.WithCapacity(64),
+	)
+	if db == nil {
+		t.Fatal("NewWithEncoder with options must not return nil")
+	}
+}
+
+func TestNewWithEncoder_NilEncoder_Panics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic for nil encoder")
+		}
+	}()
+	xordb.NewWithEncoder(nil)
 }
 
 // ── Set / Get ─────────────────────────────────────────────────────────────────
