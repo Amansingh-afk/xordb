@@ -73,7 +73,7 @@ func WithSeed(s uint64) Option { return func(o *dbOptions) { o.seed = s } }
 // Useful for natural-language queries; disable for code or structured keys.
 func WithStripPunctuation(v bool) Option { return func(o *dbOptions) { o.stripPunctuation = v } }
 
-// New creates a DB with the given options.
+// New creates a DB using the built-in n-gram HDC encoder.
 // Panics if any option value is invalid (e.g. Capacity=0, Threshold > 1).
 func New(opts ...Option) *DB {
 	o := defaultOptions()
@@ -88,6 +88,29 @@ func New(opts ...Option) *DB {
 		ChunkSize:        128,
 		Seed:             o.seed,
 	})
+	return &DB{c: cache.New(enc, cache.Options{
+		Threshold: o.threshold,
+		Capacity:  o.capacity,
+	})}
+}
+
+// NewWithEncoder creates a DB using a custom Encoder.
+// This allows plugging in external encoding strategies such as the MiniLM
+// encoder from the xordb/embed module.
+//
+// Only WithThreshold and WithCapacity options are used; encoding-related
+// options (WithDims, WithNGramSize, WithSeed, WithStripPunctuation) are
+// ignored because the encoder controls those settings.
+//
+// Panics if enc is nil or if Capacity/Threshold options are invalid.
+func NewWithEncoder(enc hdc.Encoder, opts ...Option) *DB {
+	if enc == nil {
+		panic("xordb: encoder must not be nil")
+	}
+	o := defaultOptions()
+	for _, opt := range opts {
+		opt(&o)
+	}
 	return &DB{c: cache.New(enc, cache.Options{
 		Threshold: o.threshold,
 		Capacity:  o.capacity,
