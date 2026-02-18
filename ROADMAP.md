@@ -168,23 +168,24 @@ simple loop patterns. Future: assembly stubs for AVX2 to process
 
 ## Development Phases
 
-### Phase 1 — Core HDC Engine (`hdc/`)
-- [ ] `Vector` type: `[]uint64`, dimension-agnostic
-- [ ] `Random(dims, seed)` — generate a random hypervector
-- [ ] `Bundle(vecs...)` — majority vote
-- [ ] `Bind(a, b)` — XOR
-- [ ] `Similarity(a, b) float64` — normalized Hamming (0=opposite, 1=identical)
-- [ ] `Clone()`, `Permute()` for future positional encoding
+### Phase 1 — Core HDC Engine (`hdc/`) ✅
+- [x] `Vector` type: `[]uint64`, dimension-agnostic
+- [x] `Random(dims, seed)` — generate a random hypervector
+- [x] `Bundle(vecs...)` — majority vote
+- [x] `Bind(a, b)` — XOR
+- [x] `Similarity(a, b) float64` — normalized Hamming (0=opposite, 1=identical)
+- [x] `Clone()`, `Permute()` for positional encoding
+- [x] `sync.Pool` buffer recycling + in-place ops (`permuteInto`, `bindInto`, `bundleInto`)
 
-### Phase 2 — Text Encoder (`hdc/encoder.go`)
-- [ ] `Encoder` as an **interface** — allows plugging in external embeddings later
-- [ ] `NGramEncoder` — default implementation, symbol table (rune → Vector)
-- [ ] `Normalize(input string) string` — lowercase, collapse whitespace, optional punctuation strip (runs before encoding)
-- [ ] `Encode(text string) Vector` — normalize → sliding n-gram window
-- [ ] Configurable n (default: 3), Unicode-aware
-- [ ] **Long text fix**: if input > 200 chars, use sliding window (128-char chunks, 50% overlap) and bundle results
-- [ ] **Paragraph fix**: hierarchical encoding — encode each sentence, then bundle sentence vectors
-- [ ] Sentence splitter (split on `.`, `?`, `!`, `\n`)
+### Phase 2 — Text Encoder (`hdc/encoder.go`) ✅
+- [x] `Encoder` as an **interface** — allows plugging in external embeddings
+- [x] `NGramEncoder` — default implementation, symbol table (rune → Vector)
+- [x] `Normalize(input string) string` — lowercase, collapse whitespace, optional punctuation strip
+- [x] `Encode(text string) Vector` — normalize → sliding n-gram window
+- [x] Configurable n (default: 3), Unicode-aware
+- [x] **Long text fix**: sliding window (128-char chunks, 50% overlap) and bundle results
+- [x] **Paragraph fix**: hierarchical encoding — encode each sentence, then bundle sentence vectors
+- [x] Sentence splitter (split on `.`, `?`, `!`, `\n`)
 
 **What the key (query) can be — everything is a string:**
 | Input type | Works? | Notes |
@@ -199,34 +200,44 @@ simple loop patterns. Future: assembly stubs for AVX2 to process
 
 **The contract**: key = `string` (encoded to hypervector). Value = `any` (returned as-is on hit).
 
-### Phase 3 — Semantic Cache (`cache/`)
-- [ ] `Cache` struct: stores `(hypervector, value, key_string, timestamp)`
-- [ ] `Set(key string, value any)`
-- [ ] `Get(key string) (any, bool, float64)` — returns value + similarity score
-- [ ] Configurable similarity threshold (default: 0.82)
-- [ ] LRU eviction when capacity exceeded
-- [ ] Thread-safe (RWMutex)
+### Phase 3 — Semantic Cache (`cache/`) ✅
+- [x] `Cache` struct: stores `(hypervector, value, key_string, timestamp)`
+- [x] `Set(key string, value any)`
+- [x] `Get(key string) (any, bool, float64)` — returns value + similarity score
+- [x] Configurable similarity threshold (default: 0.82)
+- [x] LRU eviction when capacity exceeded
+- [x] Thread-safe (RWMutex)
 
-### Phase 4 — Public API (`xdb.go`)
-- [ ] `New(opts ...Option) *DB`
-- [ ] `Options`: dims, threshold, capacity, n-gram size
-- [ ] `DB.Set / Get / Delete / Len / Stats()`
-- [ ] `Stats`: hit rate, avg similarity on hits, total entries
+### Phase 4 — Public API (`xdb.go`) ✅
+- [x] `New(opts ...Option) *DB`
+- [x] `Options`: dims, threshold, capacity, n-gram size
+- [x] `DB.Set / Get / Delete / Len / Stats()`
+- [x] `Stats`: hit rate, avg similarity on hits, total entries
+- [x] `NewWithEncoder(enc, opts...)` — custom encoder support
 
-### Phase 5 — Demo & Benchmarks
-- [ ] `cmd/demo/` — interactive CLI to show cache hits
-- [ ] `BenchmarkEncode` — how fast is text → hypervector?
-- [ ] `BenchmarkGet` — how fast is a cache lookup?
-- [ ] `BenchmarkGet10k` — 10,000 entries in cache
-- [ ] Compare similarity scores for related vs unrelated queries
+### Phase 5 — Demo & Benchmarks ✅
+- [x] `cmd/demo/` — interactive CLI to show cache hits
+- [x] `BenchmarkEncode` — how fast is text → hypervector?
+- [x] `BenchmarkGet` — how fast is a cache lookup?
+- [x] `BenchmarkGet10k` — 10,000 entries in cache
+- [x] Compare similarity scores for related vs unrelated queries
+- [x] Docker benchmark suite (xordb n-gram + MiniLM vs GPTCache)
 
-### Phase 6 — Stretch Goals
-- [ ] Persistence: serialize cache to disk (gob / flatbuffers)
-- [ ] LSH for HDC hypervectors
-- [ ] Float vector input: accept external embeddings (OpenAI, BERT, etc.), project to binary via random projection (Johnson-Lindenstrauss) — enables true semantic similarity
-- [ ] HTTP server mode: REST API for use as a sidecar
-- [ ] Associative store: `Bind("delhi", "india")` then query "what is associated with india?"
-- [ ] SIMD via Go assembly (`VPAND`, `VPOPCNTQ`)
+### Phase 6 — MiniLM Local Embeddings (`embed/`) ✅
+- [x] `MiniLMEncoder` — ONNX inference + binary projection via random hyperplane LSH
+- [x] Pure Go WordPiece tokenizer (30k vocab, embedded)
+- [x] Model management CLI (`xordb-model download / info / path`)
+- [x] Separate Go module — core stays zero-dependency
+
+### Phase 7 — Next Up
+- [ ] TTL expiration — auto-evict stale entries (critical for caching correctness)
+- [ ] Disk persistence — gob for simplicity, flatbuffers as upgrade path
+- [ ] LSH indexing — sub-linear lookup for large caches (10k+ entries)
+- [ ] HTTP sidecar mode — REST API for polyglot use
+- [ ] SIMD assembly (`VPAND`, `VPOPCNTQ`) — 4x throughput on AVX2
+- [ ] Additional model support (Nomic Embed, Arctic)
+- [ ] Batch encoding API
+- [ ] Associative store: `Bind("delhi", "india")` then query by association
 
 > Note: billion-scale, distributed sharding, and LangChain adapters are out of scope.
 > Ship something real and embedded first.
