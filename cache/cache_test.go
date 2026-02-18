@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"xordb/cache"
 	"xordb/hdc"
@@ -178,7 +179,7 @@ func TestCache_LRU_AccessPromotes(t *testing.T) {
 
 	c.Set("alpha", 1)
 	c.Set("beta", 2)
-	c.Get("alpha") // promote alpha
+	c.Get("alpha")    // promote alpha
 	c.Set("gamma", 3) // evicts beta (now LRU)
 
 	_, aOk, _ := c.Get("alpha")
@@ -435,5 +436,127 @@ func BenchmarkCache_Set(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		c.Set(fmt.Sprintf("key %d", i), i)
+	}
+}
+
+// ── TTL ───────────────────────────────────────────────────────────────────────
+
+func newCacheWithTTL(threshold float64, capacity int, ttl time.Duration) *cache.Cache {
+	enc := hdc.NewNGramEncoder(hdc.DefaultConfig())
+	return cache.New(enc, cache.Options{Threshold: threshold, Capacity: capacity, TTL: ttl})
+}
+
+func TestCache_TTL_ExpiredEntryMissed(t *testing.T) {
+	c := newCacheWithTTL(0.82, 16, 1*time.Millisecond)
+	c.Set("hello world", 42)
+
+	time.Sleep(5 * time.Millisecond)
+
+	_, ok, _ := c.Get("hello world")
+	if ok {
+		t.Fatal("expired entry must not be returned")
+	}
+}
+
+func TestCache_TTL_AliveEntryHits(t *testing.T) {
+	c := newCacheWithTTL(0.82, 16, 1*time.Hour)
+	c.Set("hello world", 42)
+
+	v, ok, sim := c.Get("hello world")
+	if !ok {
+		t.Fatal("entry with 1h TTL must still be alive")
+	}
+	if v != 42 {
+		t.Fatalf("want 42, got %v", v)
+	}
+	if sim != 1.0 {
+		t.Fatalf("exact hit must return sim=1.0, got %.4f", sim)
+	}
+}
+
+func TestCache_TTL_ZeroMeansNoExpiry(t *testing.T) {
+	c := newCacheWithTTL(0.82, 16, 0) // zero TTL = no expiry
+	c.Set("hello world", 42)
+
+	// Even with a sleep the entry must survive.
+	time.Sleep(2 * time.Millisecond)
+
+	v, ok, _ := c.Get("hello world")
+	if !ok {
+		t.Fatal("zero TTL must mean no expiry")
+	}
+	if v != 42 {
+		t.Fatalf("want 42, got %v", v)
+	}
+}
+
+func TestCache_TTL_PerEntryOverride(t *testing.T) {
+	// Global TTL = 1 hour, but one entry gets 1ms.
+	c := newCacheWithTTL(0.82, 16, 1*time.Hour)
+	c.Set("long lived", "stays")
+	c.SetWithTTL("short lived", "goes", 1*time.Millisecond)
+
+	time.Sleep(5 * time.Millisecond)
+
+	_, shortOk, _ := c.Get("short lived")
+	if shortOk {
+		t.Fatal("per-entry 1ms TTL entry must have expired")
+	}
+
+	v, longOk, _ := c.Get("long lived")
+	if !longOk || v != "stays" {
+		t.Fatal("1h TTL entry must still be alive")
+	}
+}
+
+func TestCache_TTL_ExpiredReaped(t *testing.T) {
+	c := newCacheWithTTL(0.82, 16, 1*time.Millisecond)
+	c.Set("alpha", 1)
+	c.Set("beta", 2)
+
+	if c.Len() != 2 {
+		t.Fatalf("want len=2 before expiry, got %d", c.Len())
+	}
+
+	time.Sleep(5 * time.Millisecond)
+
+	// Trigger scan by doing a Get; expired entries are reaped.
+	c.Get("anything")
+
+	if c.Len() != 0 {
+		t.Fatalf("want len=0 after expiry + scan, got %d", c.Len())
+	}
+}
+
+func TestCache_TTL_Stats_Expired(t *testing.T) {
+	c := newCacheWithTTL(0.82, 16, 1*time.Millisecond)
+	c.Set("a", 1)
+	c.Set("b", 2)
+
+	time.Sleep(5 * time.Millisecond)
+
+	c.Get("trigger scan") // reaps both
+
+	s := c.Stats()
+	if s.Expired != 2 {
+		t.Fatalf("want 2 expired, got %d", s.Expired)
+	}
+}
+
+func TestCache_TTL_LRU_EvictsBeforeExpiry(t *testing.T) {
+	// capacity=2 with long TTL; LRU eviction still works.
+	c := newCacheWithTTL(0.99, 2, 1*time.Hour)
+
+	c.Set("alpha", 1)
+	c.Set("beta", 2)
+	c.Set("gamma", 3) // evicts alpha (LRU), not by TTL
+
+	if c.Len() != 2 {
+		t.Fatalf("capacity=2 but len=%d", c.Len())
+	}
+
+	_, ok, _ := c.Get("alpha")
+	if ok {
+		t.Fatal("alpha should have been evicted by LRU")
 	}
 }

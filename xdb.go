@@ -10,6 +10,8 @@
 package xordb
 
 import (
+	"time"
+
 	"xordb/cache"
 	"xordb/hdc"
 )
@@ -20,6 +22,7 @@ type Stats struct {
 	Hits        uint64
 	Misses      uint64
 	Sets        uint64
+	Expired     uint64
 	HitRate     float64
 	AvgSimOnHit float64
 }
@@ -39,6 +42,7 @@ type dbOptions struct {
 	ngram            int
 	seed             uint64
 	stripPunctuation bool
+	ttl              time.Duration
 }
 
 func defaultOptions() dbOptions {
@@ -73,6 +77,11 @@ func WithSeed(s uint64) Option { return func(o *dbOptions) { o.seed = s } }
 // Useful for natural-language queries; disable for code or structured keys.
 func WithStripPunctuation(v bool) Option { return func(o *dbOptions) { o.stripPunctuation = v } }
 
+// WithTTL sets the default time-to-live for cache entries.
+// Entries that exceed their TTL are lazily removed during the next Get scan.
+// A zero value (the default) means entries never expire.
+func WithTTL(d time.Duration) Option { return func(o *dbOptions) { o.ttl = d } }
+
 // New creates a DB using the built-in n-gram HDC encoder.
 // Panics if any option value is invalid (e.g. Capacity=0, Threshold > 1).
 func New(opts ...Option) *DB {
@@ -91,6 +100,7 @@ func New(opts ...Option) *DB {
 	return &DB{c: cache.New(enc, cache.Options{
 		Threshold: o.threshold,
 		Capacity:  o.capacity,
+		TTL:       o.ttl,
 	})}
 }
 
@@ -114,12 +124,20 @@ func NewWithEncoder(enc hdc.Encoder, opts ...Option) *DB {
 	return &DB{c: cache.New(enc, cache.Options{
 		Threshold: o.threshold,
 		Capacity:  o.capacity,
+		TTL:       o.ttl,
 	})}
 }
 
 // Set stores value under key. If the exact key already exists its value is
 // updated and the entry is promoted to most-recently-used.
+// The entry uses the cache's default TTL (set via WithTTL).
 func (db *DB) Set(key string, value any) { db.c.Set(key, value) }
+
+// SetWithTTL stores value under key with a per-entry TTL that overrides the
+// cache default. A TTL of zero means the entry never expires.
+func (db *DB) SetWithTTL(key string, value any, ttl time.Duration) {
+	db.c.SetWithTTL(key, value, ttl)
+}
 
 // Get returns the value stored under the most similar key at or above the threshold.
 // Returns (value, true, similarity) on hit, or (nil, false, 0) on miss.
@@ -140,6 +158,7 @@ func (db *DB) Stats() Stats {
 		Hits:        s.Hits,
 		Misses:      s.Misses,
 		Sets:        s.Sets,
+		Expired:     s.Expired,
 		HitRate:     s.HitRate,
 		AvgSimOnHit: s.AvgSimOnHit,
 	}

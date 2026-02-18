@@ -11,8 +11,9 @@ import (
 
 // Options configures a Cache.
 type Options struct {
-	Threshold float64 // minimum similarity for a hit (default 0.82)
-	Capacity  int     // max entries before LRU eviction (default 1024)
+	Threshold float64       // minimum similarity for a hit (default 0.82)
+	Capacity  int           // max entries before LRU eviction (default 1024)
+	TTL       time.Duration // default time-to-live for entries; zero means no expiry
 }
 
 // DefaultOptions returns production-ready defaults.
@@ -26,15 +27,17 @@ type Stats struct {
 	Hits        uint64
 	Misses      uint64
 	Sets        uint64
+	Expired     uint64
 	HitRate     float64
 	AvgSimOnHit float64
 }
 
 type entry struct {
-	key   string
-	vec   hdc.Vector
-	value any
-	ts    time.Time
+	key      string
+	vec      hdc.Vector
+	value    any
+	ts       time.Time
+	deadline time.Time // zero value = never expires
 }
 
 // Cache is a thread-safe semantic cache.
@@ -47,11 +50,13 @@ type Cache struct {
 	index     map[string]*list.Element // exact-key → LRU element
 	threshold float64
 	capacity  int
+	ttl       time.Duration
 
-	hits   uint64
-	misses uint64
-	sets   uint64
-	simSum float64
+	hits    uint64
+	misses  uint64
+	sets    uint64
+	expired uint64
+	simSum  float64
 }
 
 // New creates a Cache using enc for key encoding.
@@ -69,14 +74,25 @@ func New(enc hdc.Encoder, opts Options) *Cache {
 		index:     make(map[string]*list.Element),
 		threshold: opts.Threshold,
 		capacity:  opts.Capacity,
+		ttl:       opts.TTL,
 	}
 }
 
-// Set stores value under key.
+// Set stores value under key using the cache's default TTL.
 // If the exact key already exists its value is updated in place and the entry
 // is promoted to most-recently-used.
 // If the cache is at capacity the least-recently-used entry is evicted first.
 func (c *Cache) Set(key string, value any) {
+	c.setWithTTL(key, value, c.ttl)
+}
+
+// SetWithTTL stores value under key with a per-entry TTL that overrides the
+// cache default. A TTL of zero means the entry never expires.
+func (c *Cache) SetWithTTL(key string, value any, ttl time.Duration) {
+	c.setWithTTL(key, value, ttl)
+}
+
+func (c *Cache) setWithTTL(key string, value any, ttl time.Duration) {
 	vec := c.enc.Encode(key) // encoding is lock-free
 
 	c.mu.Lock()
@@ -84,11 +100,15 @@ func (c *Cache) Set(key string, value any) {
 
 	c.sets++
 
+	now := time.Now()
+	dl := deadlineFrom(now, ttl)
+
 	if elem, ok := c.index[key]; ok {
 		e := elem.Value.(*entry)
 		e.value = value
 		e.vec = vec
-		e.ts = time.Now()
+		e.ts = now
+		e.deadline = dl
 		c.lru.MoveToFront(elem)
 		return
 	}
@@ -97,8 +117,16 @@ func (c *Cache) Set(key string, value any) {
 		c.evictLocked()
 	}
 
-	e := &entry{key: key, vec: vec, value: value, ts: time.Now()}
+	e := &entry{key: key, vec: vec, value: value, ts: now, deadline: dl}
 	c.index[key] = c.lru.PushFront(e)
+}
+
+// deadlineFrom returns now+ttl if ttl > 0, or the zero time (never expires).
+func deadlineFrom(now time.Time, ttl time.Duration) time.Time {
+	if ttl > 0 {
+		return now.Add(ttl)
+	}
+	return time.Time{}
 }
 
 // Get returns the value stored under the most similar key above the threshold.
@@ -167,6 +195,7 @@ func (c *Cache) Stats() Stats {
 		Hits:        c.hits,
 		Misses:      c.misses,
 		Sets:        c.sets,
+		Expired:     c.expired,
 		HitRate:     hitRate,
 		AvgSimOnHit: avgSim,
 	}
@@ -174,19 +203,36 @@ func (c *Cache) Stats() Stats {
 
 // scanLocked performs a linear similarity scan and returns the best-matching
 // element at or above c.threshold, or nil if no match is found.
+// Expired entries are lazily removed during the scan.
 // Must be called with c.mu held.
 func (c *Cache) scanLocked(vec hdc.Vector) (*list.Element, float64) {
 	var bestElem *list.Element
 	var bestSim float64
 
-	for elem := c.lru.Front(); elem != nil; elem = elem.Next() {
+	now := time.Now()
+	for elem := c.lru.Front(); elem != nil; {
 		e := elem.Value.(*entry)
+		next := elem.Next()
+
+		if c.isExpired(e, now) {
+			c.removeLocked(elem)
+			c.expired++
+			elem = next
+			continue
+		}
+
 		if s := hdc.Similarity(vec, e.vec); s >= c.threshold && s > bestSim {
 			bestSim = s
 			bestElem = elem
 		}
+		elem = next
 	}
 	return bestElem, bestSim
+}
+
+// isExpired reports whether e has a non-zero deadline that is before now.
+func (c *Cache) isExpired(e *entry, now time.Time) bool {
+	return !e.deadline.IsZero() && now.After(e.deadline)
 }
 
 func (c *Cache) evictLocked() {

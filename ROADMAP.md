@@ -230,7 +230,7 @@ simple loop patterns. Future: assembly stubs for AVX2 to process
 - [x] Separate Go module — core stays zero-dependency
 
 ### Phase 7 — Next Up
-- [ ] TTL expiration — auto-evict stale entries (critical for caching correctness)
+- [x] TTL expiration — lazy eviction on `Get`, global default + per-entry override via `SetWithTTL`
 - [ ] Disk persistence — gob for simplicity, flatbuffers as upgrade path
 - [ ] LSH indexing — sub-linear lookup for large caches (10k+ entries)
 - [ ] HTTP sidecar mode — REST API for polyglot use
