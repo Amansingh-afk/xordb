@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"xordb"
 	"xordb/hdc"
@@ -371,6 +372,56 @@ func TestDB_Concurrent(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
+}
+
+// ── TTL ───────────────────────────────────────────────────────────────────────
+
+func TestDB_WithTTL_Expiration(t *testing.T) {
+	db := xordb.New(xordb.WithTTL(1 * time.Millisecond))
+	db.Set("hello", "world")
+
+	time.Sleep(5 * time.Millisecond)
+
+	_, ok, _ := db.Get("hello")
+	if ok {
+		t.Fatal("entry must have expired after TTL")
+	}
+
+	s := db.Stats()
+	if s.Expired != 1 {
+		t.Fatalf("want 1 expired, got %d", s.Expired)
+	}
+}
+
+func TestDB_SetWithTTL_Override(t *testing.T) {
+	db := xordb.New(xordb.WithTTL(1 * time.Hour))
+
+	db.Set("long", "stays")
+	db.SetWithTTL("short", "goes", 1*time.Millisecond)
+
+	time.Sleep(5 * time.Millisecond)
+
+	_, shortOk, _ := db.Get("short")
+	if shortOk {
+		t.Fatal("per-entry 1ms TTL entry must have expired")
+	}
+
+	v, longOk, _ := db.Get("long")
+	if !longOk || v != "stays" {
+		t.Fatal("1h TTL entry must still be alive")
+	}
+}
+
+func TestDB_WithTTL_Zero_NoExpiry(t *testing.T) {
+	db := xordb.New() // no WithTTL — default is zero (no expiry)
+	db.Set("key", "value")
+
+	time.Sleep(2 * time.Millisecond)
+
+	v, ok, _ := db.Get("key")
+	if !ok || v != "value" {
+		t.Fatal("zero TTL must mean no expiry")
+	}
 }
 
 // ── benchmarks ────────────────────────────────────────────────────────────────

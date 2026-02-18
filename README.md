@@ -250,6 +250,7 @@ db := xordb.New(opts ...Option)
 | `WithNGramSize(n)` | `3` | Character n-gram window. |
 | `WithSeed(s)` | `0` | Encoder seed. DBs with different seeds are incompatible. |
 | `WithStripPunctuation(v)` | `false` | Strip punctuation before encoding. |
+| `WithTTL(d)` | `0` (no expiry) | Default time-to-live for entries. Expired entries are lazily reaped on next `Get`. |
 
 **With custom encoder (e.g. MiniLM):**
 
@@ -277,7 +278,13 @@ enc, err := embed.NewMiniLMEncoder(
 db.Set(key string, value any)
 ```
 Store any value under a string key. If the exact key exists, update it and
-promote to most-recently-used.
+promote to most-recently-used. Uses the cache's default TTL.
+
+```go
+db.SetWithTTL(key string, value any, ttl time.Duration)
+```
+Store with a per-entry TTL that overrides the cache default. A TTL of zero
+means the entry never expires.
 
 ```go
 db.Get(key string) (value any, hit bool, similarity float64)
@@ -305,6 +312,7 @@ type Stats struct {
     Hits        uint64
     Misses      uint64
     Sets        uint64
+    Expired     uint64
     HitRate     float64
     AvgSimOnHit float64
 }
@@ -522,7 +530,7 @@ go run ./cmd/demo/ -repl
 - [x] WordPiece tokenizer (pure Go, zero deps)
 - [x] Binary projection via random hyperplane LSH
 - [x] Model management CLI (`xordb-model`)
-- [ ] TTL expiration (auto-evict stale entries)
+- [x] TTL expiration (lazy eviction on `Get`, global + per-entry override)
 - [ ] Disk persistence (gob → flatbuffers upgrade path)
 - [ ] LSH indexing for sub-linear lookup at scale
 - [ ] HTTP sidecar mode
