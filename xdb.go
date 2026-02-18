@@ -1,8 +1,4 @@
-// Package xordb provides a semantic cache powered by Hyperdimensional Computing.
-// Keys are encoded to hypervectors; Get returns the value stored under the
-// most similar key above the configured threshold.
-//
-// Basic usage:
+// Package xordb — semantic cache powered by Hyperdimensional Computing.
 //
 //	db := xordb.New()
 //	db.Set("what is the capital of india", "Delhi")
@@ -16,7 +12,6 @@ import (
 	"xordb/hdc"
 )
 
-// Stats is a point-in-time snapshot of DB metrics.
 type Stats struct {
 	Entries     int
 	Hits        uint64
@@ -27,12 +22,11 @@ type Stats struct {
 	AvgSimOnHit float64
 }
 
-// DB is a semantic cache. It is safe for concurrent use.
+// DB is a semantic cache. Safe for concurrent use.
 type DB struct {
 	c *cache.Cache
 }
 
-// Option configures a DB.
 type Option func(*dbOptions)
 
 type dbOptions struct {
@@ -54,36 +48,18 @@ func defaultOptions() dbOptions {
 	}
 }
 
-// WithDims sets the hypervector dimension (default 10000).
-// Higher values increase accuracy at the cost of memory and CPU.
-func WithDims(n int) Option { return func(o *dbOptions) { o.dims = n } }
-
-// WithThreshold sets the minimum similarity for a cache hit (default 0.82).
-// Must be in (0, 1]. Raise to require closer matches; lower to be more permissive.
+func WithDims(n int) Option      { return func(o *dbOptions) { o.dims = n } }
 func WithThreshold(t float64) Option { return func(o *dbOptions) { o.threshold = t } }
-
-// WithCapacity sets the maximum number of entries before LRU eviction (default 1024).
-func WithCapacity(n int) Option { return func(o *dbOptions) { o.capacity = n } }
-
-// WithNGramSize sets the character n-gram window size for encoding (default 3).
-// Larger windows are more precise but less typo-tolerant.
+func WithCapacity(n int) Option  { return func(o *dbOptions) { o.capacity = n } }
 func WithNGramSize(n int) Option { return func(o *dbOptions) { o.ngram = n } }
-
-// WithSeed sets the encoder namespace seed (default 0).
-// DBs with different seeds produce incompatible vectors.
-func WithSeed(s uint64) Option { return func(o *dbOptions) { o.seed = s } }
-
-// WithStripPunctuation enables punctuation removal during key normalization.
-// Useful for natural-language queries; disable for code or structured keys.
+func WithSeed(s uint64) Option   { return func(o *dbOptions) { o.seed = s } }
 func WithStripPunctuation(v bool) Option { return func(o *dbOptions) { o.stripPunctuation = v } }
 
-// WithTTL sets the default time-to-live for cache entries.
-// Entries that exceed their TTL are lazily removed during the next Get scan.
-// A zero value (the default) means entries never expire.
+// WithTTL sets the default TTL for cache entries. Zero = no expiry.
+// Expired entries are lazily cleaned during Get scans.
 func WithTTL(d time.Duration) Option { return func(o *dbOptions) { o.ttl = d } }
 
-// New creates a DB using the built-in n-gram HDC encoder.
-// Panics if any option value is invalid (e.g. Capacity=0, Threshold > 1).
+// New creates a DB with the built-in n-gram encoder.
 func New(opts ...Option) *DB {
 	o := defaultOptions()
 	for _, opt := range opts {
@@ -104,15 +80,9 @@ func New(opts ...Option) *DB {
 	})}
 }
 
-// NewWithEncoder creates a DB using a custom Encoder.
-// This allows plugging in external encoding strategies such as the MiniLM
-// encoder from the xordb/embed module.
-//
-// Only WithThreshold and WithCapacity options are used; encoding-related
-// options (WithDims, WithNGramSize, WithSeed, WithStripPunctuation) are
-// ignored because the encoder controls those settings.
-//
-// Panics if enc is nil or if Capacity/Threshold options are invalid.
+// NewWithEncoder — plug in any encoder (e.g. xordb/embed MiniLM).
+// Encoding-related options (Dims, NGramSize, Seed etc.) are ignored since
+// the encoder controls those.
 func NewWithEncoder(enc hdc.Encoder, opts ...Option) *DB {
 	if enc == nil {
 		panic("xordb: encoder must not be nil")
@@ -128,29 +98,19 @@ func NewWithEncoder(enc hdc.Encoder, opts ...Option) *DB {
 	})}
 }
 
-// Set stores value under key. If the exact key already exists its value is
-// updated and the entry is promoted to most-recently-used.
-// The entry uses the cache's default TTL (set via WithTTL).
 func (db *DB) Set(key string, value any) { db.c.Set(key, value) }
 
-// SetWithTTL stores value under key with a per-entry TTL that overrides the
-// cache default. A TTL of zero means the entry never expires.
+// SetWithTTL — per-entry TTL that overrides the default. Zero = never expires.
 func (db *DB) SetWithTTL(key string, value any, ttl time.Duration) {
 	db.c.SetWithTTL(key, value, ttl)
 }
 
-// Get returns the value stored under the most similar key at or above the threshold.
-// Returns (value, true, similarity) on hit, or (nil, false, 0) on miss.
+// Get returns (value, true, similarity) on hit, (nil, false, 0) on miss.
 func (db *DB) Get(key string) (any, bool, float64) { return db.c.Get(key) }
 
-// Delete removes the entry with the exact key string.
-// Returns true if an entry was found and removed.
 func (db *DB) Delete(key string) bool { return db.c.Delete(key) }
+func (db *DB) Len() int              { return db.c.Len() }
 
-// Len returns the current number of cached entries.
-func (db *DB) Len() int { return db.c.Len() }
-
-// Stats returns a point-in-time snapshot of DB metrics.
 func (db *DB) Stats() Stats {
 	s := db.c.Stats()
 	return Stats{

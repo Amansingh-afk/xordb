@@ -2,15 +2,11 @@ package hdc
 
 import "sync"
 
-// bufPool recycles []uint64 word buffers and []int32 counts buffers to avoid
-// per-Encode heap allocations. Both pools are keyed by the dims value so that
-// a buffer obtained for one dimension is never accidentally reused for another.
-//
-// Zeroing happens on *get*, not put, so a stale buffer returned to the pool
-// can never leak data into the next user.
+// bufPool recycles []uint64 and []int32 buffers via sync.Pool.
+// GC pressure kam karne ke liye — zeroing happens on get, not put.
 type bufPool struct {
-	words  sync.Pool // stores *[]uint64
-	counts sync.Pool // stores *[]int32
+	words  sync.Pool
+	counts sync.Pool
 	dims   int
 }
 
@@ -33,7 +29,6 @@ func newBufPool(dims int) *bufPool {
 	}
 }
 
-// getWords returns a zeroed []uint64 slice of length numWords(dims).
 func (p *bufPool) getWords() []uint64 {
 	bp := p.words.Get().(*[]uint64)
 	buf := *bp
@@ -43,12 +38,10 @@ func (p *bufPool) getWords() []uint64 {
 	return buf
 }
 
-// putWords returns a word buffer to the pool.
 func (p *bufPool) putWords(buf []uint64) {
 	p.words.Put(&buf)
 }
 
-// getCounts returns a zeroed []int32 slice of length dims.
 func (p *bufPool) getCounts() []int32 {
 	bp := p.counts.Get().(*[]int32)
 	buf := *bp
@@ -58,7 +51,6 @@ func (p *bufPool) getCounts() []int32 {
 	return buf
 }
 
-// putCounts returns a counts buffer to the pool.
 func (p *bufPool) putCounts(buf []int32) {
 	p.counts.Put(&buf)
 }

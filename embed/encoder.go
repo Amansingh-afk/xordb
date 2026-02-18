@@ -14,35 +14,23 @@ import (
 )
 
 const (
-	// MiniLM-L6-v2 produces 384-dimensional float32 embeddings.
-	miniLMEmbDims = 384
-
-	// Default max sequence length for tokenization (BERT standard).
-	defaultMaxSeqLen = 128
-
-	// Default binary vector dimensionality for HDC projection.
-	defaultBinaryDims = 10_000
-
-	// Default projection seed for reproducibility.
+	miniLMEmbDims         = 384    // MiniLM-L6-v2 output dims
+	defaultMaxSeqLen      = 128
+	defaultBinaryDims     = 10_000
 	defaultProjectionSeed = 0xDB_CAFE
 )
 
-// MiniLMEncoder implements hdc.Encoder using a local MiniLM-L6-v2 ONNX model.
-// It tokenizes input text with WordPiece, runs ONNX inference to get 384-dim
-// float32 embeddings, then projects them to binary hdc.Vector via random
-// hyperplane LSH.
-//
+// MiniLMEncoder — local MiniLM-L6-v2 via ONNX → 384-dim float → binary HDC vector.
 // Thread-safe after construction.
 type MiniLMEncoder struct {
 	mu        sync.Mutex
 	session   *ort.DynamicAdvancedSession
 	tokenizer *WordPieceTokenizer
 	projector *Projector
-	maxSeqLen int
+	maxSeqLen  int
 	binaryDims int
 }
 
-// EncoderOption configures a MiniLMEncoder.
 type EncoderOption func(*encoderConfig)
 
 type encoderConfig struct {
@@ -60,36 +48,24 @@ func defaultEncoderConfig() encoderConfig {
 	}
 }
 
-// WithModelPath sets the path to the ONNX model file.
-// If not set, the encoder looks in standard locations (see DefaultModelPath).
 func WithModelPath(path string) EncoderOption {
 	return func(c *encoderConfig) { c.modelPath = path }
 }
 
-// WithMaxSeqLen sets the maximum token sequence length. Default: 128.
-// Longer inputs are truncated. Must be > 2 (to fit [CLS] and [SEP]).
 func WithMaxSeqLen(n int) EncoderOption {
 	return func(c *encoderConfig) { c.maxSeqLen = n }
 }
 
-// WithBinaryDims sets the output binary vector dimensionality. Default: 10000.
 func WithBinaryDims(dims int) EncoderOption {
 	return func(c *encoderConfig) { c.binaryDims = dims }
 }
 
-// WithProjectionSeed sets the seed for random hyperplane generation. Default: 0xXDB_CAFE.
-// Using the same seed ensures deterministic projection across restarts.
 func WithProjectionSeed(seed uint64) EncoderOption {
 	return func(c *encoderConfig) { c.projectionSeed = seed }
 }
 
-// NewMiniLMEncoder creates a MiniLMEncoder.
-//
-// The ONNX runtime shared library must be available on the system. Call
-// InitONNXRuntime before creating an encoder, or it will be initialized
-// automatically with default settings.
-//
-// Returns an error if the model file is not found or ONNX session creation fails.
+// NewMiniLMEncoder creates the encoder. ONNX runtime must be available.
+// Model path is auto-resolved if not set (see DefaultModelPath).
 func NewMiniLMEncoder(opts ...EncoderOption) (*MiniLMEncoder, error) {
 	cfg := defaultEncoderConfig()
 	for _, opt := range opts {
@@ -100,72 +76,56 @@ func NewMiniLMEncoder(opts ...EncoderOption) (*MiniLMEncoder, error) {
 		return nil, fmt.Errorf("embed: maxSeqLen must be >= 3, got %d", cfg.maxSeqLen)
 	}
 
-	// Resolve model path.
 	modelPath := cfg.modelPath
 	if modelPath == "" {
 		var err error
 		modelPath, err = DefaultModelPath()
 		if err != nil {
-			return nil, fmt.Errorf("embed: model not found: %w (use xordb-model download or WithModelPath)", err)
+			return nil, fmt.Errorf("embed: model not found: %w (run: xordb-model download)", err)
 		}
 	}
 	if _, err := os.Stat(modelPath); err != nil {
 		return nil, fmt.Errorf("embed: model file not accessible: %w", err)
 	}
 
-	// Initialize ONNX Runtime if not already done.
 	if err := ensureONNXRuntime(); err != nil {
 		return nil, fmt.Errorf("embed: ONNX runtime init failed: %w", err)
 	}
 
-	// Create ONNX session with dynamic axes.
-	inputNames := []string{"input_ids", "attention_mask", "token_type_ids"}
-	outputNames := []string{"last_hidden_state"}
-
 	session, err := ort.NewDynamicAdvancedSession(
 		modelPath,
-		inputNames,
-		outputNames,
-		nil, // session options
+		[]string{"input_ids", "attention_mask", "token_type_ids"},
+		[]string{"last_hidden_state"},
+		nil,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("embed: failed to create ONNX session: %w", err)
 	}
 
-	tokenizer := NewWordPieceTokenizer(vocabData)
-	projector := NewProjector(miniLMEmbDims, cfg.binaryDims, cfg.projectionSeed)
-
 	return &MiniLMEncoder{
 		session:    session,
-		tokenizer:  tokenizer,
-		projector:  projector,
+		tokenizer:  NewWordPieceTokenizer(vocabData),
+		projector:  NewProjector(miniLMEmbDims, cfg.binaryDims, cfg.projectionSeed),
 		maxSeqLen:  cfg.maxSeqLen,
 		binaryDims: cfg.binaryDims,
 	}, nil
 }
 
-// Encode implements hdc.Encoder. It tokenizes the text, runs ONNX inference,
-// applies mean pooling, L2-normalizes the embedding, and projects it to a
-// binary hdc.Vector.
+// Encode implements hdc.Encoder. Error → zero vector (interface mein error nahi hai).
 func (e *MiniLMEncoder) Encode(text string) hdc.Vector {
 	emb, err := e.Embed(text)
 	if err != nil {
-		// hdc.Encoder interface doesn't return errors — return a zero vector.
-		// This matches the behavior of the n-gram encoder for empty input.
 		return hdc.New(e.binaryDims)
 	}
 	return e.projector.Project(emb)
 }
 
-// Embed returns the raw 384-dimensional float32 embedding for the given text.
-// This is useful for debugging or for users who want to do their own projection.
+// Embed returns the raw 384-dim float32 embedding (useful for debugging).
 func (e *MiniLMEncoder) Embed(text string) ([]float32, error) {
-	// 1. Tokenize.
 	tokens := e.tokenizer.Tokenize(text, e.maxSeqLen)
 	seqLen := len(tokens.InputIDs)
 	tokens.PadTo(e.maxSeqLen)
 
-	// 2. Create ONNX tensors.
 	shape := ort.NewShape(1, int64(e.maxSeqLen))
 
 	inputIDs, err := ort.NewTensor(shape, castInt32ToInt64(tokens.InputIDs))
@@ -186,7 +146,6 @@ func (e *MiniLMEncoder) Embed(text string) ([]float32, error) {
 	}
 	defer tokenTypeIDs.Destroy()
 
-	// Output: [1, seq_len, 384]
 	outputShape := ort.NewShape(1, int64(e.maxSeqLen), miniLMEmbDims)
 	output, err := ort.NewEmptyTensor[float32](outputShape)
 	if err != nil {
@@ -194,7 +153,6 @@ func (e *MiniLMEncoder) Embed(text string) ([]float32, error) {
 	}
 	defer output.Destroy()
 
-	// 3. Run inference.
 	e.mu.Lock()
 	err = e.session.Run(
 		[]ort.ArbitraryTensor{inputIDs, attentionMask, tokenTypeIDs},
@@ -205,17 +163,13 @@ func (e *MiniLMEncoder) Embed(text string) ([]float32, error) {
 		return nil, fmt.Errorf("embed: ONNX inference failed: %w", err)
 	}
 
-	// 4. Mean pooling over non-padding tokens.
 	outputData := output.GetData()
 	embedding := meanPool(outputData, seqLen, e.maxSeqLen, miniLMEmbDims)
-
-	// 5. L2 normalize.
 	l2Normalize(embedding)
 
 	return embedding, nil
 }
 
-// Close releases ONNX session resources. The encoder must not be used after Close.
 func (e *MiniLMEncoder) Close() error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -227,8 +181,7 @@ func (e *MiniLMEncoder) Close() error {
 	return nil
 }
 
-// meanPool computes the mean of token embeddings, excluding padding tokens.
-// data is [1, maxSeqLen, embDims], we average over tokens [0, seqLen).
+// meanPool — average over non-padding tokens.
 func meanPool(data []float32, seqLen, maxSeqLen, embDims int) []float32 {
 	result := make([]float32, embDims)
 	if seqLen == 0 {
@@ -249,7 +202,6 @@ func meanPool(data []float32, seqLen, maxSeqLen, embDims int) []float32 {
 	return result
 }
 
-// l2Normalize normalizes a vector to unit length in-place.
 func l2Normalize(v []float32) {
 	var norm float64
 	for _, x := range v {
@@ -264,7 +216,6 @@ func l2Normalize(v []float32) {
 	}
 }
 
-// castInt32ToInt64 converts a slice of int32 to int64 (ONNX Runtime expects int64).
 func castInt32ToInt64(in []int32) []int64 {
 	out := make([]int64, len(in))
 	for i, v := range in {
@@ -273,23 +224,18 @@ func castInt32ToInt64(in []int32) []int64 {
 	return out
 }
 
-// ── ONNX Runtime initialization ──────────────────────────────────────────────
+// ── ONNX Runtime init ────────────────────────────────────────────────────────
 
 var ortOnce sync.Once
 var ortErr error
 
-// ensureONNXRuntime initializes the ONNX Runtime library if not already done.
 func ensureONNXRuntime() error {
 	ortOnce.Do(func() {
-		// The library will look for the shared library in standard paths.
-		// Users can set ORT_LIB_PATH or call ort.SetSharedLibraryPath before this.
 		ortErr = ort.InitializeEnvironment()
 	})
 	return ortErr
 }
 
-// DestroyONNXRuntime cleans up the ONNX Runtime environment.
-// Call this at application shutdown if you want clean resource release.
 func DestroyONNXRuntime() error {
 	return ort.DestroyEnvironment()
 }
@@ -298,22 +244,14 @@ func DestroyONNXRuntime() error {
 
 const modelFileName = "all-MiniLM-L6-v2.onnx"
 
-// DefaultModelPath returns the default path where the ONNX model is expected.
-// It checks the following locations in order:
-//  1. $XORDB_MODEL_PATH (if set)
-//  2. $XDG_DATA_HOME/xordb/models/all-MiniLM-L6-v2.onnx
-//  3. ~/.local/share/xordb/models/all-MiniLM-L6-v2.onnx
-//
-// Returns the first path that exists, or an error if none is found.
+// DefaultModelPath checks: $XORDB_MODEL_PATH → $XDG_DATA_HOME/xordb/models/ → ~/.local/share/xordb/models/
 func DefaultModelPath() (string, error) {
-	// 1. Environment variable override.
 	if p := os.Getenv("XORDB_MODEL_PATH"); p != "" {
 		if _, err := os.Stat(p); err == nil {
 			return p, nil
 		}
 	}
 
-	// 2. XDG data directory.
 	candidates := modelCandidatePaths()
 	for _, p := range candidates {
 		if _, err := os.Stat(p); err == nil {
@@ -324,7 +262,6 @@ func DefaultModelPath() (string, error) {
 	return "", fmt.Errorf("model not found in any of: $XORDB_MODEL_PATH, %v", candidates)
 }
 
-// ModelDir returns the directory where models should be stored.
 func ModelDir() string {
 	dataDir := os.Getenv("XDG_DATA_HOME")
 	if dataDir == "" {

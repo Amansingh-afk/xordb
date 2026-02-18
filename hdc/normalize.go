@@ -5,8 +5,7 @@ import (
 	"unicode"
 )
 
-// normalizeSegment collapses horizontal whitespace and optionally strips all
-// punctuation from an already-lowercased text segment.
+// normalizeSegment collapses whitespace, optionally strips punctuation.
 func normalizeSegment(text string, stripPunct bool) string {
 	var b strings.Builder
 	b.Grow(len(text))
@@ -20,7 +19,7 @@ func normalizeSegment(text string, stripPunct bool) string {
 				prevSpace = true
 			}
 		case stripPunct && unicode.IsPunct(r):
-			// strip all punctuation; don't reset prevSpace
+			// hata do punctuation
 		default:
 			b.WriteRune(r)
 			prevSpace = false
@@ -30,8 +29,7 @@ func normalizeSegment(text string, stripPunct bool) string {
 	return strings.TrimSpace(b.String())
 }
 
-// splitSentences splits lowercased text on . ? ! and \n.
-// The delimiter is stripped from each returned segment.
+// splitSentences splits on . ? ! and \n.
 func splitSentences(text string) []string {
 	var out []string
 	var cur strings.Builder

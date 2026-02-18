@@ -9,19 +9,16 @@ import (
 	"xordb/hdc"
 )
 
-// Options configures a Cache.
 type Options struct {
-	Threshold float64       // minimum similarity for a hit (default 0.82)
-	Capacity  int           // max entries before LRU eviction (default 1024)
-	TTL       time.Duration // default time-to-live for entries; zero means no expiry
+	Threshold float64       // minimum similarity for a hit
+	Capacity  int           // max entries before LRU eviction
+	TTL       time.Duration // default TTL; zero = no expiry
 }
 
-// DefaultOptions returns production-ready defaults.
 func DefaultOptions() Options {
 	return Options{Threshold: 0.82, Capacity: 1024}
 }
 
-// Stats is a point-in-time snapshot of cache metrics.
 type Stats struct {
 	Entries     int
 	Hits        uint64
@@ -37,17 +34,16 @@ type entry struct {
 	vec      hdc.Vector
 	value    any
 	ts       time.Time
-	deadline time.Time // zero value = never expires
+	deadline time.Time // zero = never expires
 }
 
-// Cache is a thread-safe semantic cache.
-// Keys are encoded to hypervectors; Get returns the value stored under the
-// most similar key above the configured threshold.
+// Cache — thread-safe semantic cache. Keys are encoded to hypervectors;
+// Get returns the best match above threshold.
 type Cache struct {
 	mu        sync.Mutex
 	enc       hdc.Encoder
 	lru       *list.List
-	index     map[string]*list.Element // exact-key → LRU element
+	index     map[string]*list.Element
 	threshold float64
 	capacity  int
 	ttl       time.Duration
@@ -59,8 +55,6 @@ type Cache struct {
 	simSum  float64
 }
 
-// New creates a Cache using enc for key encoding.
-// Panics if Capacity <= 0 or Threshold is outside (0, 1].
 func New(enc hdc.Encoder, opts Options) *Cache {
 	if opts.Capacity <= 0 {
 		panic("cache: Options.Capacity must be positive")
@@ -78,22 +72,18 @@ func New(enc hdc.Encoder, opts Options) *Cache {
 	}
 }
 
-// Set stores value under key using the cache's default TTL.
-// If the exact key already exists its value is updated in place and the entry
-// is promoted to most-recently-used.
-// If the cache is at capacity the least-recently-used entry is evicted first.
+// Set stores value with the cache's default TTL.
 func (c *Cache) Set(key string, value any) {
 	c.setWithTTL(key, value, c.ttl)
 }
 
-// SetWithTTL stores value under key with a per-entry TTL that overrides the
-// cache default. A TTL of zero means the entry never expires.
+// SetWithTTL — per-entry TTL override. Zero = never expires.
 func (c *Cache) SetWithTTL(key string, value any, ttl time.Duration) {
 	c.setWithTTL(key, value, ttl)
 }
 
 func (c *Cache) setWithTTL(key string, value any, ttl time.Duration) {
-	vec := c.enc.Encode(key) // encoding is lock-free
+	vec := c.enc.Encode(key)
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -103,6 +93,7 @@ func (c *Cache) setWithTTL(key string, value any, ttl time.Duration) {
 	now := time.Now()
 	dl := deadlineFrom(now, ttl)
 
+	// update if exact key exists
 	if elem, ok := c.index[key]; ok {
 		e := elem.Value.(*entry)
 		e.value = value
@@ -121,7 +112,6 @@ func (c *Cache) setWithTTL(key string, value any, ttl time.Duration) {
 	c.index[key] = c.lru.PushFront(e)
 }
 
-// deadlineFrom returns now+ttl if ttl > 0, or the zero time (never expires).
 func deadlineFrom(now time.Time, ttl time.Duration) time.Time {
 	if ttl > 0 {
 		return now.Add(ttl)
@@ -129,11 +119,9 @@ func deadlineFrom(now time.Time, ttl time.Duration) time.Time {
 	return time.Time{}
 }
 
-// Get returns the value stored under the most similar key above the threshold.
-// Returns (value, true, similarity) on a hit, or (nil, false, 0) on a miss.
-// The matched entry is promoted to most-recently-used on a hit.
+// Get returns (value, true, similarity) on hit, (nil, false, 0) on miss.
 func (c *Cache) Get(key string) (any, bool, float64) {
-	vec := c.enc.Encode(key) // lock-free
+	vec := c.enc.Encode(key)
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -150,11 +138,7 @@ func (c *Cache) Get(key string) (any, bool, float64) {
 	return bestElem.Value.(*entry).value, true, bestSim
 }
 
-// Delete removes the entry stored under the exact key string.
-// The match is exact: the key must be byte-identical to the string passed to Set.
-// Returns true if an entry was found and removed.
-// To remove an entry whose key was normalised by the encoder, use the same
-// original string that was passed to Set.
+// Delete removes by exact key. Returns true if found.
 func (c *Cache) Delete(key string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -167,7 +151,6 @@ func (c *Cache) Delete(key string) bool {
 	return true
 }
 
-// Len returns the current number of cached entries.
 func (c *Cache) Len() int {
 	c.mu.Lock()
 	n := c.lru.Len()
@@ -175,7 +158,6 @@ func (c *Cache) Len() int {
 	return n
 }
 
-// Stats returns a point-in-time snapshot of cache metrics.
 func (c *Cache) Stats() Stats {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -201,10 +183,8 @@ func (c *Cache) Stats() Stats {
 	}
 }
 
-// scanLocked performs a linear similarity scan and returns the best-matching
-// element at or above c.threshold, or nil if no match is found.
-// Expired entries are lazily removed during the scan.
-// Must be called with c.mu held.
+// scanLocked — linear scan, returns best match above threshold.
+// Expired entries lazily removed during scan (background goroutine nahi chahiye).
 func (c *Cache) scanLocked(vec hdc.Vector) (*list.Element, float64) {
 	var bestElem *list.Element
 	var bestSim float64
@@ -230,7 +210,6 @@ func (c *Cache) scanLocked(vec hdc.Vector) (*list.Element, float64) {
 	return bestElem, bestSim
 }
 
-// isExpired reports whether e has a non-zero deadline that is before now.
 func (c *Cache) isExpired(e *entry, now time.Time) bool {
 	return !e.deadline.IsZero() && now.After(e.deadline)
 }
