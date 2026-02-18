@@ -513,8 +513,16 @@ go run ./cmd/demo/ -repl
 
 ## Roadmap
 
+- [x] MiniLM local embeddings (`xordb/embed` module)
+- [x] Buffer pool for n-gram encoder (`sync.Pool` recycling)
+- [x] Docker benchmark suite (xordb vs GPTCache)
+- [x] Custom encoder interface (`NewWithEncoder`)
+- [x] WordPiece tokenizer (pure Go, zero deps)
+- [x] Binary projection via random hyperplane LSH
+- [x] Model management CLI (`xordb-model`)
+- [ ] TTL expiration (auto-evict stale entries)
+- [ ] Disk persistence (gob → flatbuffers upgrade path)
 - [ ] LSH indexing for sub-linear lookup at scale
-- [ ] Disk persistence (gob / flatbuffers)
 - [ ] HTTP sidecar mode
 - [ ] SIMD assembly (`VPAND`, `VPOPCNTQ`)
 - [ ] Additional model support (Nomic Embed, Arctic)
