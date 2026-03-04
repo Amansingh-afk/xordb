@@ -8,12 +8,17 @@ import (
 	"hash/crc32"
 	"io"
 	"time"
+
+	"xordb/hdc"
 )
 
 const (
 	headerSize    = 32
 	formatMagic   = "XRDB"
 	formatVersion = 2
+
+	maxKeyLen = 1 << 20 // 1 MB
+	maxValLen = 1 << 24 // 16 MB
 )
 
 // EncodeSnapshot writes a binary-encoded snapshot to w.
@@ -85,7 +90,7 @@ func DecodeSnapshot(r io.Reader, dims int) (Snapshot, error) {
 		return Snapshot{}, fmt.Errorf("cache: CRC mismatch (file=%08x computed=%08x)", expectedCRC, actualCRC)
 	}
 
-	nw := numWords(dims)
+	nw := hdc.NumWords(dims)
 	entries := make([]EntrySnapshot, 0, count)
 	buf := bytes.NewReader(payloadBytes)
 
@@ -105,14 +110,14 @@ func DecodeSnapshot(r io.Reader, dims int) (Snapshot, error) {
 	}, nil
 }
 
-func numWords(dims int) int {
-	return (dims + 63) / 64
-}
 
 func decodeEntry(r *bytes.Reader, numWords int) (EntrySnapshot, error) {
 	var keyLen uint32
 	if err := binary.Read(r, binary.LittleEndian, &keyLen); err != nil {
 		return EntrySnapshot{}, err
+	}
+	if keyLen > maxKeyLen {
+		return EntrySnapshot{}, fmt.Errorf("key length %d exceeds maximum %d", keyLen, maxKeyLen)
 	}
 	keyBuf := make([]byte, keyLen)
 	if _, err := io.ReadFull(r, keyBuf); err != nil {
@@ -137,6 +142,9 @@ func decodeEntry(r *bytes.Reader, numWords int) (EntrySnapshot, error) {
 	var valLen uint32
 	if err := binary.Read(r, binary.LittleEndian, &valLen); err != nil {
 		return EntrySnapshot{}, err
+	}
+	if valLen > maxValLen {
+		return EntrySnapshot{}, fmt.Errorf("value length %d exceeds maximum %d", valLen, maxValLen)
 	}
 	valBuf := make([]byte, valLen)
 	if _, err := io.ReadFull(r, valBuf); err != nil {
@@ -163,6 +171,9 @@ func decodeEntry(r *bytes.Reader, numWords int) (EntrySnapshot, error) {
 }
 
 func encodeEntry(w *bytes.Buffer, e EntrySnapshot, dims int) error {
+	if len(e.VecData) != hdc.NumWords(dims) {
+		return fmt.Errorf("entry %q: VecData length %d != expected %d", e.Key, len(e.VecData), hdc.NumWords(dims))
+	}
 	// KeyLen + Key
 	keyBytes := []byte(e.Key)
 	if err := binary.Write(w, binary.LittleEndian, uint32(len(keyBytes))); err != nil {

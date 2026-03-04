@@ -7,7 +7,7 @@ import (
 	"xordb/hdc"
 )
 
-const snapshotVersion = 1
+const snapshotVersion = 2
 
 // EntrySnapshot is a serializable representation of one cache entry.
 type EntrySnapshot struct {
@@ -28,14 +28,18 @@ type Snapshot struct {
 }
 
 // Snapshot returns a point-in-time serializable copy of the cache.
-// Expired entries are included; LoadSnapshot skips them on restore.
+// Expired entries are skipped.
 func (c *Cache) Snapshot() Snapshot {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	now := time.Now()
 	entries := make([]EntrySnapshot, 0, c.lru.Len())
 	for elem := c.lru.Front(); elem != nil; elem = elem.Next() {
 		e := elem.Value.(*entry)
+		if c.isExpired(e, now) {
+			continue
+		}
 		entries = append(entries, EntrySnapshot{
 			Key:      e.key,
 			VecData:  e.vec.Data(),
