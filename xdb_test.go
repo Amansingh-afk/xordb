@@ -1,7 +1,9 @@
 package xordb_test
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -453,6 +455,164 @@ func BenchmarkDB_Get_1000Entries(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		db.Get("benchmark entry number 500")
+	}
+}
+
+// ── persistence ───────────────────────────────────────────────────────────────
+
+func TestDB_Save_Load_RoundTrip(t *testing.T) {
+	db := xordb.New(xordb.WithThreshold(0.99))
+	db.Set("what is the capital of india", "Delhi")
+	db.Set("who wrote ramayana", "Valmiki")
+	db.Set("largest planet", "Jupiter")
+
+	path := t.TempDir() + "/cache.gob"
+	if err := db.Save(path); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	db2 := xordb.New(xordb.WithThreshold(0.99))
+	if err := db2.Load(path); err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+
+	for _, key := range []string{"what is the capital of india", "who wrote ramayana", "largest planet"} {
+		v, ok, _ := db2.Get(key)
+		if !ok {
+			t.Errorf("expected hit for %q after load", key)
+		}
+		_ = v
+	}
+}
+
+func TestDB_Save_Load_ValuesPreserved(t *testing.T) {
+	db := xordb.New(xordb.WithThreshold(0.99))
+	db.Set("key", "hello world")
+
+	path := t.TempDir() + "/cache.gob"
+	if err := db.Save(path); err != nil {
+		t.Fatal(err)
+	}
+
+	db2 := xordb.New(xordb.WithThreshold(0.99))
+	if err := db2.Load(path); err != nil {
+		t.Fatal(err)
+	}
+
+	v, ok, _ := db2.Get("key")
+	if !ok {
+		t.Fatal("expected hit")
+	}
+	if v != "hello world" {
+		t.Errorf("expected %q got %v", "hello world", v)
+	}
+}
+
+func TestDB_Load_MissingFile(t *testing.T) {
+	db := xordb.New()
+	err := db.Load("/nonexistent/path/cache.gob")
+	if err == nil {
+		t.Fatal("expected error for missing file")
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("expected os.ErrNotExist, got %v", err)
+	}
+}
+
+func TestDB_Save_AtomicWrite(t *testing.T) {
+	db := xordb.New()
+	db.Set("key", "val")
+
+	dir := t.TempDir()
+	path := dir + "/cache.gob"
+	if err := db.Save(path); err != nil {
+		t.Fatal(err)
+	}
+
+	// .tmp file must not exist after successful save.
+	if _, err := os.Stat(path + ".tmp"); !errors.Is(err, os.ErrNotExist) {
+		t.Error("expected .tmp file to be cleaned up after save")
+	}
+	// Final file must exist.
+	if _, err := os.Stat(path); err != nil {
+		t.Errorf("expected final file to exist: %v", err)
+	}
+}
+
+func TestDB_Load_MergesWithExisting(t *testing.T) {
+	db1 := xordb.New(xordb.WithThreshold(0.99))
+	db1.Set("from-file", "file-val")
+	path := t.TempDir() + "/cache.gob"
+	if err := db1.Save(path); err != nil {
+		t.Fatal(err)
+	}
+
+	db2 := xordb.New(xordb.WithThreshold(0.99))
+	db2.Set("pre-existing", "live-val")
+	if err := db2.Load(path); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, ok, _ := db2.Get("pre-existing"); !ok {
+		t.Error("pre-existing entry should survive Load")
+	}
+	if _, ok, _ := db2.Get("from-file"); !ok {
+		t.Error("file entry should be present after Load")
+	}
+}
+
+func TestDB_Save_Load_TTL_ExpiredSkipped(t *testing.T) {
+	db := xordb.New(xordb.WithThreshold(0.99))
+	db.SetWithTTL("alive", "yes", time.Hour)
+	db.SetWithTTL("dead", "no", time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
+
+	path := t.TempDir() + "/cache.gob"
+	if err := db.Save(path); err != nil {
+		t.Fatal(err)
+	}
+
+	db2 := xordb.New(xordb.WithThreshold(0.99))
+	if err := db2.Load(path); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, ok, _ := db2.Get("alive"); !ok {
+		t.Error("expected 'alive' to hit after load")
+	}
+	if _, ok, _ := db2.Get("dead"); ok {
+		t.Error("expected 'dead' to be skipped (expired before load)")
+	}
+}
+
+func TestDB_RegisterGobType(t *testing.T) {
+	type Result struct {
+		Answer string
+		Score  float64
+	}
+	xordb.RegisterGobType(Result{})
+
+	db := xordb.New(xordb.WithThreshold(0.99))
+	db.Set("query", Result{Answer: "42", Score: 0.99})
+
+	path := t.TempDir() + "/cache.gob"
+	if err := db.Save(path); err != nil {
+		t.Fatalf("Save with custom type: %v", err)
+	}
+
+	db2 := xordb.New(xordb.WithThreshold(0.99))
+	xordb.RegisterGobType(Result{})
+	if err := db2.Load(path); err != nil {
+		t.Fatalf("Load with custom type: %v", err)
+	}
+
+	v, ok, _ := db2.Get("query")
+	if !ok {
+		t.Fatal("expected hit")
+	}
+	r := v.(Result)
+	if r.Answer != "42" || r.Score != 0.99 {
+		t.Errorf("unexpected value: %+v", r)
 	}
 }
 

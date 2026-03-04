@@ -42,6 +42,7 @@ type entry struct {
 type Cache struct {
 	mu        sync.Mutex
 	enc       hdc.Encoder
+	dims      int // vector dimensionality, used for snapshot validation
 	lru       *list.List
 	index     map[string]*list.Element
 	threshold float64
@@ -64,6 +65,7 @@ func New(enc hdc.Encoder, opts Options) *Cache {
 	}
 	return &Cache{
 		enc:       enc,
+		dims:      enc.Encode("").Dims(),
 		lru:       list.New(),
 		index:     make(map[string]*list.Element),
 		threshold: opts.Threshold,
