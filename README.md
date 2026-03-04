@@ -318,6 +318,36 @@ type Stats struct {
 }
 ```
 
+### Persistence
+
+```go
+db.Save(path string) error
+```
+Write the cache to disk. Uses a custom binary format (`.xrdb`). The write is
+atomic — data goes to a `.tmp` file, fsynced, then renamed into place. Expired
+entries are stripped on save.
+
+```go
+db.Load(path string) error
+```
+Load a previously saved snapshot. Expired entries are skipped. Merges into the
+live cache — existing entries survive, duplicate keys get overwritten by the
+snapshot. Returns a wrapped `os.ErrNotExist` if the file is missing, so you can
+safely call `Load` on first run and check with `errors.Is`.
+
+```go
+db.Save("cache.xrdb")
+
+// Later, or in a new process:
+db.Load("cache.xrdb")
+```
+
+The binary format includes a CRC-32 checksum over the entry payload. Corrupted
+files are rejected on load. Values are serialized as JSON internally — structs,
+maps, slices, and primitives all work without registration. The only caveat:
+values come back as their JSON-decoded types (e.g. `int` becomes `float64`,
+structs become `map[string]any`).
+
 ---
 
 ## Model management
@@ -440,6 +470,8 @@ xordb/
 │
 ├── cache/
 │   ├── cache.go          Cache: Set, Get, Delete, LRU eviction
+│   ├── persist.go        Snapshot / LoadSnapshot (in-memory)
+│   ├── binary.go         Binary encode/decode (.xrdb format)
 │   └── cache_test.go
 │
 ├── embed/                        ← separate Go module (xordb/embed)
@@ -531,7 +563,7 @@ go run ./cmd/demo/ -repl
 - [x] Binary projection via random hyperplane LSH
 - [x] Model management CLI (`xordb-model`)
 - [x] TTL expiration (lazy eviction on `Get`, global + per-entry override)
-- [ ] Disk persistence (gob → flatbuffers upgrade path)
+- [x] Disk persistence (custom binary format, CRC-32, atomic writes)
 - [ ] LSH indexing for sub-linear lookup at scale
 - [ ] HTTP sidecar mode
 - [ ] SIMD assembly (`VPAND`, `VPOPCNTQ`)
