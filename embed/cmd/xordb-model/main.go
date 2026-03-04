@@ -1,11 +1,4 @@
-// Command xordb-model manages ONNX model files for xordb/embed.
-//
-// Usage:
-//
-//	xordb-model download          Download the default MiniLM model
-//	xordb-model download --force  Re-download even if already present
-//	xordb-model path              Print the model file path
-//	xordb-model info              Print model info and status
+// xordb-model — download and manage ONNX models for xordb/embed.
 package main
 
 import (
@@ -21,11 +14,9 @@ import (
 )
 
 const (
-	modelURL  = "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx"
-	modelName = "all-MiniLM-L6-v2.onnx"
-	// SHA-256 of the FP32 ONNX model from HuggingFace (for integrity verification).
-	// Set to empty to skip verification (useful during development).
-	modelSHA256 = ""
+	modelURL    = "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx"
+	modelName   = "all-MiniLM-L6-v2.onnx"
+	modelSHA256 = "" // set for integrity check, empty = skip
 )
 
 func main() {
@@ -58,8 +49,8 @@ func printUsage() {
 	fmt.Println(`xordb-model — manage ONNX models for xordb/embed
 
 Usage:
-  xordb-model download [--force]   Download the default MiniLM-L6-v2 model
-  xordb-model path                 Print the expected model file path
+  xordb-model download [--force]   Download MiniLM-L6-v2 model
+  xordb-model path                 Print model file path
   xordb-model info                 Print model info and status
   xordb-model help                 Show this help
 
@@ -80,7 +71,6 @@ func downloadModel(force bool) error {
 		}
 	}
 
-	// Create directory.
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("creating model directory: %w", err)
 	}
@@ -89,14 +79,13 @@ func downloadModel(force bool) error {
 	fmt.Printf("  From: %s\n", modelURL)
 	fmt.Printf("  To:   %s\n", dest)
 
-	// Download to a temp file first, then rename for atomicity.
+	// temp file mein download, phir atomic rename
 	tmpFile := dest + ".download"
 	if err := downloadFile(tmpFile, modelURL); err != nil {
 		os.Remove(tmpFile)
 		return err
 	}
 
-	// Verify SHA-256 if configured.
 	if modelSHA256 != "" {
 		hash, err := fileSHA256(tmpFile)
 		if err != nil {
@@ -110,7 +99,6 @@ func downloadModel(force bool) error {
 		fmt.Println("  ✓ SHA-256 verified")
 	}
 
-	// Atomic rename.
 	if err := os.Rename(tmpFile, dest); err != nil {
 		os.Remove(tmpFile)
 		return fmt.Errorf("finalizing download: %w", err)
@@ -138,7 +126,6 @@ func downloadFile(dest, url string) error {
 		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
 	}
 
-	// Show download progress.
 	var written int64
 	buf := make([]byte, 32*1024)
 	for {
@@ -179,7 +166,6 @@ func fileSHA256(path string) (string, error) {
 func printModelPath() {
 	path, err := embed.DefaultModelPath()
 	if err != nil {
-		// Print the expected path even if the file doesn't exist.
 		fmt.Println(filepath.Join(embed.ModelDir(), modelName))
 		return
 	}
