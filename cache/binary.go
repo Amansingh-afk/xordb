@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"hash/crc32"
 	"io"
+	"time"
 )
 
 const (
@@ -45,6 +47,119 @@ func EncodeSnapshot(w io.Writer, s Snapshot) error {
 	}
 	_, err := w.Write(payloadBytes)
 	return err
+}
+
+// DecodeSnapshot reads a binary-encoded snapshot.
+// dims is the expected vector dimensionality — mismatches are rejected.
+func DecodeSnapshot(r io.Reader, dims int) (Snapshot, error) {
+	var hdr [headerSize]byte
+	if _, err := io.ReadFull(r, hdr[:]); err != nil {
+		return Snapshot{}, fmt.Errorf("cache: read header: %w", err)
+	}
+
+	if string(hdr[0:4]) != formatMagic {
+		return Snapshot{}, fmt.Errorf("cache: invalid magic %q (want %q)", hdr[0:4], formatMagic)
+	}
+	version := binary.LittleEndian.Uint16(hdr[4:6])
+	if version != formatVersion {
+		return Snapshot{}, fmt.Errorf("cache: format version %d unsupported (want %d)", version, formatVersion)
+	}
+
+	fileDims := int(binary.LittleEndian.Uint32(hdr[8:12]))
+	if fileDims != dims {
+		return Snapshot{}, fmt.Errorf("cache: file dims %d does not match cache dims %d", fileDims, dims)
+	}
+
+	capacity := int(binary.LittleEndian.Uint32(hdr[12:16]))
+	count := int(binary.LittleEndian.Uint32(hdr[16:20]))
+	expectedCRC := binary.LittleEndian.Uint32(hdr[20:24])
+
+	// Read all remaining bytes (entry payload).
+	payloadBytes, err := io.ReadAll(r)
+	if err != nil {
+		return Snapshot{}, fmt.Errorf("cache: read payload: %w", err)
+	}
+
+	actualCRC := crc32.ChecksumIEEE(payloadBytes)
+	if actualCRC != expectedCRC {
+		return Snapshot{}, fmt.Errorf("cache: CRC mismatch (file=%08x computed=%08x)", expectedCRC, actualCRC)
+	}
+
+	nw := numWords(dims)
+	entries := make([]EntrySnapshot, 0, count)
+	buf := bytes.NewReader(payloadBytes)
+
+	for i := 0; i < count; i++ {
+		e, err := decodeEntry(buf, nw)
+		if err != nil {
+			return Snapshot{}, fmt.Errorf("cache: entry %d: %w", i, err)
+		}
+		entries = append(entries, e)
+	}
+
+	return Snapshot{
+		Version:  int(version),
+		Dims:     fileDims,
+		Capacity: capacity,
+		Entries:  entries,
+	}, nil
+}
+
+func numWords(dims int) int {
+	return (dims + 63) / 64
+}
+
+func decodeEntry(r *bytes.Reader, numWords int) (EntrySnapshot, error) {
+	var keyLen uint32
+	if err := binary.Read(r, binary.LittleEndian, &keyLen); err != nil {
+		return EntrySnapshot{}, err
+	}
+	keyBuf := make([]byte, keyLen)
+	if _, err := io.ReadFull(r, keyBuf); err != nil {
+		return EntrySnapshot{}, err
+	}
+
+	vecData := make([]uint64, numWords)
+	for i := range vecData {
+		if err := binary.Read(r, binary.LittleEndian, &vecData[i]); err != nil {
+			return EntrySnapshot{}, err
+		}
+	}
+
+	var ts, deadline int64
+	if err := binary.Read(r, binary.LittleEndian, &ts); err != nil {
+		return EntrySnapshot{}, err
+	}
+	if err := binary.Read(r, binary.LittleEndian, &deadline); err != nil {
+		return EntrySnapshot{}, err
+	}
+
+	var valLen uint32
+	if err := binary.Read(r, binary.LittleEndian, &valLen); err != nil {
+		return EntrySnapshot{}, err
+	}
+	valBuf := make([]byte, valLen)
+	if _, err := io.ReadFull(r, valBuf); err != nil {
+		return EntrySnapshot{}, err
+	}
+
+	var value any
+	if err := json.Unmarshal(valBuf, &value); err != nil {
+		return EntrySnapshot{}, err
+	}
+
+	var dl time.Time
+	if deadline != 0 {
+		dl = time.Unix(0, deadline)
+	}
+
+	return EntrySnapshot{
+		Key:      string(keyBuf),
+		VecData:  vecData,
+		Value:    value,
+		Ts:       time.Unix(0, ts),
+		Deadline: dl,
+	}, nil
 }
 
 func encodeEntry(w *bytes.Buffer, e EntrySnapshot, dims int) error {
