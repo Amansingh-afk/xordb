@@ -5,23 +5,20 @@ import (
 	"unicode"
 )
 
-// Special token IDs for BERT uncased vocabulary.
+// BERT uncased special tokens
 const (
-	clsTokenID = 101  // [CLS]
-	sepTokenID = 102  // [SEP]
-	unkTokenID = 100  // [UNK]
-	padTokenID = 0    // [PAD]
+	clsTokenID = 101
+	sepTokenID = 102
+	unkTokenID = 100
+	padTokenID = 0
 )
 
-// WordPieceTokenizer implements BERT-style WordPiece tokenization.
-// It is safe for concurrent use after construction (read-only).
+// WordPieceTokenizer — BERT-style subword tokenization. Read-only after init.
 type WordPieceTokenizer struct {
-	vocab    map[string]int32 // token string → token ID
-	maxToken int              // longest token length (for subword search)
+	vocab    map[string]int32
+	maxToken int
 }
 
-// NewWordPieceTokenizer creates a tokenizer from a vocabulary string where
-// each line is a token and the line number (0-based) is its ID.
 func NewWordPieceTokenizer(vocabText string) *WordPieceTokenizer {
 	lines := strings.Split(vocabText, "\n")
 	vocab := make(map[string]int32, len(lines))
@@ -39,23 +36,17 @@ func NewWordPieceTokenizer(vocabText string) *WordPieceTokenizer {
 	return &WordPieceTokenizer{vocab: vocab, maxToken: maxToken}
 }
 
-// TokenizeResult holds the output of tokenization.
 type TokenizeResult struct {
-	InputIDs      []int32 // token IDs including [CLS] and [SEP]
-	AttentionMask []int32 // 1 for real tokens, 0 for padding
-	TokenTypeIDs  []int32 // 0 for single-sentence input
+	InputIDs      []int32
+	AttentionMask []int32
+	TokenTypeIDs  []int32
 }
 
-// Tokenize converts text into BERT token IDs with [CLS] and [SEP] framing.
-// If maxLen > 0, the output is truncated (before [SEP]) to fit within maxLen tokens.
+// Tokenize converts text into BERT token IDs with [CLS] and [SEP].
 func (t *WordPieceTokenizer) Tokenize(text string, maxLen int) TokenizeResult {
-	// 1. Normalize: lowercase, strip accents, insert whitespace around punctuation.
 	cleaned := t.preprocess(text)
-
-	// 2. Split on whitespace to get initial words.
 	words := strings.Fields(cleaned)
 
-	// 3. WordPiece each word.
 	ids := make([]int32, 0, len(words)*2+2)
 	ids = append(ids, clsTokenID)
 
@@ -63,13 +54,11 @@ func (t *WordPieceTokenizer) Tokenize(text string, maxLen int) TokenizeResult {
 		ids = append(ids, t.wordPiece(word)...)
 	}
 
-	// 4. Truncate if needed (leave room for [SEP]).
 	if maxLen > 0 && len(ids) >= maxLen {
 		ids = ids[:maxLen-1]
 	}
 	ids = append(ids, sepTokenID)
 
-	// 5. Build attention mask and token type IDs.
 	n := len(ids)
 	mask := make([]int32, n)
 	typeIDs := make([]int32, n)
@@ -84,8 +73,7 @@ func (t *WordPieceTokenizer) Tokenize(text string, maxLen int) TokenizeResult {
 	}
 }
 
-// PadTo pads the TokenizeResult to exactly length n with [PAD] tokens.
-// If already at or beyond n, no padding is added.
+// PadTo pads to exactly n tokens.
 func (r *TokenizeResult) PadTo(n int) {
 	for len(r.InputIDs) < n {
 		r.InputIDs = append(r.InputIDs, padTokenID)
@@ -94,8 +82,6 @@ func (r *TokenizeResult) PadTo(n int) {
 	}
 }
 
-// preprocess lowercases the text, strips accents, and inserts whitespace
-// around punctuation characters so they become separate tokens.
 func (t *WordPieceTokenizer) preprocess(text string) string {
 	text = strings.ToLower(text)
 
@@ -104,8 +90,7 @@ func (t *WordPieceTokenizer) preprocess(text string) string {
 
 	for _, r := range text {
 		if unicode.In(r, unicode.Mn) {
-			// Strip combining marks (accents).
-			continue
+			continue // strip accents
 		}
 		if isPunctuation(r) {
 			b.WriteByte(' ')
@@ -121,8 +106,6 @@ func (t *WordPieceTokenizer) preprocess(text string) string {
 	return b.String()
 }
 
-// wordPiece splits a single whitespace-delimited word into WordPiece sub-tokens.
-// Returns a slice of token IDs.
 func (t *WordPieceTokenizer) wordPiece(word string) []int32 {
 	if _, ok := t.vocab[word]; ok {
 		return []int32{t.vocab[word]}
@@ -154,7 +137,6 @@ func (t *WordPieceTokenizer) wordPiece(word string) []int32 {
 		}
 
 		if !found {
-			// Character not in vocab — emit [UNK] for the whole word.
 			return []int32{unkTokenID}
 		}
 	}
@@ -162,7 +144,6 @@ func (t *WordPieceTokenizer) wordPiece(word string) []int32 {
 	return ids
 }
 
-// isPunctuation checks if a rune is a punctuation character in the BERT sense.
 func isPunctuation(r rune) bool {
 	if (r >= 33 && r <= 47) || (r >= 58 && r <= 64) ||
 		(r >= 91 && r <= 96) || (r >= 123 && r <= 126) {
@@ -171,7 +152,6 @@ func isPunctuation(r rune) bool {
 	return unicode.IsPunct(r)
 }
 
-// isControl checks if a rune is a control character (excluding whitespace).
 func isControl(r rune) bool {
 	if r == '\t' || r == '\n' || r == '\r' {
 		return false

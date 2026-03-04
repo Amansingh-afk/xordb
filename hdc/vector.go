@@ -1,17 +1,13 @@
-// Package hdc implements a Hyperdimensional Computing engine.
-// Vectors are bitpacked []uint64 slices; all similarity operations are bitwise.
 package hdc
 
 import "math/bits"
 
-// Vector is an immutable bitpacked hypervector.
-// Padding bits in the final word are always zero.
+// Vector is a bitpacked hypervector. Padding bits in the final word are always zero.
 type Vector struct {
 	dims int
 	data []uint64
 }
 
-// New returns a zero-valued Vector of the given dimension.
 func New(dims int) Vector {
 	if dims <= 0 {
 		panic("hdc: dims must be positive")
@@ -19,8 +15,7 @@ func New(dims int) Vector {
 	return Vector{dims: dims, data: make([]uint64, numWords(dims))}
 }
 
-// FromWords constructs a Vector from a raw word slice.
-// len(data) must equal ceil(dims/64). Padding bits are zeroed automatically.
+// FromWords constructs a Vector from raw words. len(data) must equal ceil(dims/64).
 func FromWords(dims int, data []uint64) Vector {
 	if dims <= 0 {
 		panic("hdc: dims must be positive")
@@ -37,28 +32,22 @@ func FromWords(dims int, data []uint64) Vector {
 
 func (v Vector) Dims() int { return v.dims }
 
-// Data returns a copy of the underlying uint64 words.
-// This is useful for serialization or passing vectors across module boundaries.
+// Data returns a copy of the underlying words. Safe for serialization.
 func (v Vector) Data() []uint64 {
 	out := make([]uint64, len(v.data))
 	copy(out, v.data)
 	return out
 }
 
-// NumWords returns the number of uint64 words needed to store dims bits.
 func NumWords(dims int) int { return numWords(dims) }
 
-// Clone returns an independent copy of v.
 func (v Vector) Clone() Vector {
 	data := make([]uint64, len(v.data))
 	copy(data, v.data)
 	return Vector{dims: v.dims, data: data}
 }
 
-// Permute performs a cyclic right-shift of the bit array by one position:
-// result[i] = v[(i+1) % dims].
-// Applying Permute dims times returns the original vector.
-// Used for positional encoding in sequences.
+// Permute does a cyclic right-shift by 1 bit. Used for positional encoding.
 func (v Vector) Permute() Vector {
 	result := v.Clone()
 	w := len(result.data)
@@ -73,9 +62,7 @@ func (v Vector) Permute() Vector {
 	return result
 }
 
-// Bundle returns the majority-vote superposition of the given vectors.
-// All vectors must have the same dimension.
-// With an even count, ties resolve to 0.
+// Bundle returns the majority-vote superposition. Ties resolve to 0.
 func Bundle(vecs ...Vector) Vector {
 	if len(vecs) == 0 {
 		panic("hdc: Bundle requires at least one vector")
@@ -108,8 +95,7 @@ func Bundle(vecs ...Vector) Vector {
 	return result
 }
 
-// Bind associates two vectors via XOR. The operation is its own inverse:
-// Bind(Bind(a, b), b) == a.
+// Bind = XOR. Self-inverse: Bind(Bind(a,b), b) == a.
 func Bind(a, b Vector) Vector {
 	requireSameDims(a, b)
 	result := New(a.dims)
@@ -119,8 +105,8 @@ func Bind(a, b Vector) Vector {
 	return result
 }
 
-// Similarity returns the normalized Hamming similarity in [0.0, 1.0].
-// 1.0 = identical, 0.0 = opposite, ~0.5 = unrelated random vectors.
+// Similarity returns normalized Hamming similarity in [0, 1].
+// 1 = identical, ~0.5 = random/unrelated, 0 = opposite.
 func Similarity(a, b Vector) float64 {
 	requireSameDims(a, b)
 	var diff int
@@ -130,11 +116,8 @@ func Similarity(a, b Vector) float64 {
 	return 1.0 - float64(diff)/float64(a.dims)
 }
 
-// ── In-place operations (unexported, used by the pooled encoder) ─────────────
+// ── in-place ops (pooled encoder ke liye) ────────────────────────────────────
 
-// permuteInto writes the cyclic right-shift of src into dst.
-// dst.data must already be allocated with the correct length.
-// src and dst must have the same dims. dst and src must not alias.
 func permuteInto(dst, src Vector) {
 	w := len(src.data)
 	bit0 := src.data[0] & 1
@@ -145,20 +128,15 @@ func permuteInto(dst, src Vector) {
 	dst.data[w-1] = (src.data[w-1] >> 1) | (bit0 << highBit)
 }
 
-// bindInto writes XOR(a, b) into dst.data.
-// All three must have the same dims. dst.data must be pre-allocated.
 func bindInto(dst, a, b Vector) {
 	for i := range dst.data {
 		dst.data[i] = a.data[i] ^ b.data[i]
 	}
 }
 
-// bundleInto performs majority-vote of vecs into dst using the provided counts
-// scratch buffer. counts must have length >= dims and will be zeroed by this
-// function. dst.data must be pre-allocated and will be overwritten.
+// bundleInto — majority vote into dst using counts as scratch space.
 func bundleInto(dst Vector, counts []int32, vecs []Vector) {
 	dims := dst.dims
-	// Zero counts (caller may have reused the buffer).
 	for i := 0; i < dims; i++ {
 		counts[i] = 0
 	}
@@ -177,7 +155,6 @@ func bundleInto(dst Vector, counts []int32, vecs []Vector) {
 	}
 
 	threshold := int32(len(vecs) / 2)
-	// Zero dst first.
 	for i := range dst.data {
 		dst.data[i] = 0
 	}
@@ -188,8 +165,7 @@ func bundleInto(dst Vector, counts []int32, vecs []Vector) {
 	}
 }
 
-// vectorFromBuf constructs a Vector that owns the given buffer directly
-// (no copy). The caller must not use buf after this call.
+// vectorFromBuf wraps buf as a Vector without copying. Caller must not reuse buf.
 func vectorFromBuf(dims int, buf []uint64) Vector {
 	zeroPadding(buf, dims)
 	return Vector{dims: dims, data: buf}

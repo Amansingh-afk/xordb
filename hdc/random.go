@@ -2,9 +2,8 @@ package hdc
 
 import "math/rand"
 
-// Random generates a deterministic pseudorandom Vector for the given seed.
-// The same (dims, seed) pair always produces the same vector.
-// Vectors from different seeds are quasi-orthogonal with overwhelming probability.
+// Random generates a deterministic pseudorandom Vector.
+// Same (dims, seed) = same vector. Different seeds → quasi-orthogonal.
 func Random(dims int, seed uint64) Vector {
 	v := New(dims)
 	r := rand.New(rand.NewSource(int64(seed))) //nolint:gosec
