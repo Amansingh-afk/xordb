@@ -123,7 +123,17 @@ func printReport(t *testing.T, title string, deps string, threshold string, resu
 	fmt.Println("╔══════════════════════════════════════════════════════════╗")
 	fmt.Printf("║  %-55s ║\n", title)
 	fmt.Println("╠══════════════════════════════════════════════════════════╣")
-	fmt.Printf("║  Dataset:        %-39s ║\n", fmt.Sprintf("%d queries (40 match, 15 neg, 10 hard, 10 edge)", n))
+	fmt.Printf(
+		"║  Dataset:        %-39s ║\n",
+		fmt.Sprintf(
+			"%d queries (%d match, %d neg, %d hard, %d edge)",
+			n,
+			catTotal["match"],
+			catTotal["neg"],
+			catTotal["hard-neg"],
+			catTotal["edge"],
+		),
+	)
 	fmt.Printf("║  Accuracy:       %-39s ║\n", fmt.Sprintf("%.1f%% (%d/%d correct)", accuracy, tp+tn, n))
 	fmt.Printf("║  True pos:       %-39s ║\n", fmt.Sprintf("%d  (correct hits)", tp))
 	fmt.Printf("║  True neg:       %-39s ║\n", fmt.Sprintf("%d  (correct misses)", tn))

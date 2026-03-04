@@ -155,9 +155,6 @@ func (db *DB) Load(path string) error {
 	if err != nil {
 		return fmt.Errorf("xordb: load: %w", err)
 	}
-	// DecodeSnapshot stores the binary wire-format version; normalise to the
-	// in-memory snapshot version that LoadSnapshot expects.
-	snap.Version = 1
 	if err := db.c.LoadSnapshot(snap); err != nil {
 		return fmt.Errorf("xordb: load: %w", err)
 	}
