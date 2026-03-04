@@ -466,7 +466,7 @@ func TestDB_Save_Load_RoundTrip(t *testing.T) {
 	db.Set("who wrote ramayana", "Valmiki")
 	db.Set("largest planet", "Jupiter")
 
-	path := t.TempDir() + "/cache.gob"
+	path := t.TempDir() + "/cache.xrdb"
 	if err := db.Save(path); err != nil {
 		t.Fatalf("Save: %v", err)
 	}
@@ -489,7 +489,7 @@ func TestDB_Save_Load_ValuesPreserved(t *testing.T) {
 	db := xordb.New(xordb.WithThreshold(0.99))
 	db.Set("key", "hello world")
 
-	path := t.TempDir() + "/cache.gob"
+	path := t.TempDir() + "/cache.xrdb"
 	if err := db.Save(path); err != nil {
 		t.Fatal(err)
 	}
@@ -510,7 +510,7 @@ func TestDB_Save_Load_ValuesPreserved(t *testing.T) {
 
 func TestDB_Load_MissingFile(t *testing.T) {
 	db := xordb.New()
-	err := db.Load("/nonexistent/path/cache.gob")
+	err := db.Load("/nonexistent/path/cache.xrdb")
 	if err == nil {
 		t.Fatal("expected error for missing file")
 	}
@@ -524,7 +524,7 @@ func TestDB_Save_AtomicWrite(t *testing.T) {
 	db.Set("key", "val")
 
 	dir := t.TempDir()
-	path := dir + "/cache.gob"
+	path := dir + "/cache.xrdb"
 	if err := db.Save(path); err != nil {
 		t.Fatal(err)
 	}
@@ -542,7 +542,7 @@ func TestDB_Save_AtomicWrite(t *testing.T) {
 func TestDB_Load_MergesWithExisting(t *testing.T) {
 	db1 := xordb.New(xordb.WithThreshold(0.99))
 	db1.Set("from-file", "file-val")
-	path := t.TempDir() + "/cache.gob"
+	path := t.TempDir() + "/cache.xrdb"
 	if err := db1.Save(path); err != nil {
 		t.Fatal(err)
 	}
@@ -567,7 +567,7 @@ func TestDB_Save_Load_TTL_ExpiredSkipped(t *testing.T) {
 	db.SetWithTTL("dead", "no", time.Millisecond)
 	time.Sleep(5 * time.Millisecond)
 
-	path := t.TempDir() + "/cache.gob"
+	path := t.TempDir() + "/cache.xrdb"
 	if err := db.Save(path); err != nil {
 		t.Fatal(err)
 	}
@@ -617,6 +617,66 @@ func TestDB_Save_Load_BinaryFormat(t *testing.T) {
 		if !ok {
 			t.Errorf("expected hit for %q after load", key)
 		}
+	}
+}
+
+func TestDB_Save_Load_StructValue(t *testing.T) {
+	type Result struct {
+		Answer string  `json:"answer"`
+		Score  float64 `json:"score"`
+	}
+
+	db := xordb.New(xordb.WithThreshold(0.99))
+	db.Set("query", Result{Answer: "42", Score: 0.99})
+
+	path := t.TempDir() + "/cache.xrdb"
+	if err := db.Save(path); err != nil {
+		t.Fatalf("Save with struct: %v", err)
+	}
+
+	db2 := xordb.New(xordb.WithThreshold(0.99))
+	if err := db2.Load(path); err != nil {
+		t.Fatalf("Load with struct: %v", err)
+	}
+
+	v, ok, _ := db2.Get("query")
+	if !ok {
+		t.Fatal("expected hit")
+	}
+	// JSON round-trips structs as map[string]any
+	m, ok := v.(map[string]any)
+	if !ok {
+		t.Fatalf("expected map[string]any, got %T", v)
+	}
+	if m["answer"] != "42" || m["score"] != 0.99 {
+		t.Errorf("unexpected value: %+v", m)
+	}
+}
+
+func BenchmarkDB_Save_10000Entries(b *testing.B) {
+	db := xordb.New(xordb.WithCapacity(11000))
+	for i := 0; i < 10000; i++ {
+		db.Set(fmt.Sprintf("benchmark entry number %d", i), fmt.Sprintf("value-%d", i))
+	}
+	dir := b.TempDir()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		db.Save(dir + "/bench.xrdb")
+	}
+}
+
+func BenchmarkDB_Load_10000Entries(b *testing.B) {
+	db := xordb.New(xordb.WithCapacity(11000))
+	for i := 0; i < 10000; i++ {
+		db.Set(fmt.Sprintf("benchmark entry number %d", i), fmt.Sprintf("value-%d", i))
+	}
+	dir := b.TempDir()
+	db.Save(dir + "/bench.xrdb")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		db2 := xordb.New(xordb.WithCapacity(11000))
+		db2.Load(dir + "/bench.xrdb")
 	}
 }
 

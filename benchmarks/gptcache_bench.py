@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GPTCache benchmark using the same 75-pair dataset as xordb.
+"""GPTCache benchmark using the same dataset as xordb.
 
 Uses ONNX embeddings + FAISS index — GPTCache's recommended setup
 for local semantic caching.
@@ -97,7 +97,10 @@ def run_benchmark():
     def row(label, value):
         print(f"║  {label:<15}  {value:<39} ║")
 
-    row("Dataset:", f"{n} queries (40 match, 15 neg, 10 hard, 10 edge)")
+    row(
+        "Dataset:",
+        f"{n} queries ({cat_total['match']} match, {cat_total['neg']} neg, {cat_total['hard-neg']} hard, {cat_total['edge']} edge)",
+    )
     row("Accuracy:", f"{accuracy:.1f}% ({tp+tn}/{n} correct)")
     row("True pos:", f"{tp}  (correct hits)")
     row("True neg:", f"{tn}  (correct misses)")
