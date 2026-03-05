@@ -17,8 +17,10 @@ const (
 	formatMagic   = "XRDB"
 	formatVersion = 2
 
-	maxKeyLen = 1 << 20 // 1 MB
-	maxValLen = 1 << 24 // 16 MB
+	maxKeyLen     = 1 << 20  // 1 MB
+	maxValLen     = 1 << 24  // 16 MB
+	maxEntryCount = 1 << 24  // ~16M entries
+	maxPayloadLen = 1 << 32  // 4 GB hard cap on payload read
 )
 
 // EncodeSnapshot writes a binary-encoded snapshot to w.
@@ -79,10 +81,24 @@ func DecodeSnapshot(r io.Reader, dims int) (Snapshot, error) {
 	count := int(binary.LittleEndian.Uint32(hdr[16:20]))
 	expectedCRC := binary.LittleEndian.Uint32(hdr[20:24])
 
-	// Read all remaining bytes (entry payload).
-	payloadBytes, err := io.ReadAll(r)
+	if count < 0 || count > maxEntryCount {
+		return Snapshot{}, fmt.Errorf("cache: entry count %d out of range (max %d)", count, maxEntryCount)
+	}
+
+	// Compute upper bound on payload size to prevent unbounded reads.
+	nw := hdc.NumWords(dims)
+	entryOverhead := int64(4 + maxKeyLen + int64(nw)*8 + 16 + 4 + maxValLen)
+	maxPayload := int64(count) * entryOverhead
+	if maxPayload > maxPayloadLen {
+		maxPayload = maxPayloadLen
+	}
+
+	payloadBytes, err := io.ReadAll(io.LimitReader(r, maxPayload+1))
 	if err != nil {
 		return Snapshot{}, fmt.Errorf("cache: read payload: %w", err)
+	}
+	if int64(len(payloadBytes)) > maxPayload {
+		return Snapshot{}, fmt.Errorf("cache: payload size exceeds limit")
 	}
 
 	actualCRC := crc32.ChecksumIEEE(payloadBytes)
@@ -90,7 +106,6 @@ func DecodeSnapshot(r io.Reader, dims int) (Snapshot, error) {
 		return Snapshot{}, fmt.Errorf("cache: CRC mismatch (file=%08x computed=%08x)", expectedCRC, actualCRC)
 	}
 
-	nw := hdc.NumWords(dims)
 	entries := make([]EntrySnapshot, 0, count)
 	buf := bytes.NewReader(payloadBytes)
 
@@ -100,6 +115,10 @@ func DecodeSnapshot(r io.Reader, dims int) (Snapshot, error) {
 			return Snapshot{}, fmt.Errorf("cache: entry %d: %w", i, err)
 		}
 		entries = append(entries, e)
+	}
+
+	if buf.Len() != 0 {
+		return Snapshot{}, fmt.Errorf("cache: %d trailing bytes after %d entries", buf.Len(), count)
 	}
 
 	return Snapshot{
