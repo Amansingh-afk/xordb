@@ -8,6 +8,7 @@ package xordb
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"xordb/cache"
@@ -119,14 +120,15 @@ func (db *DB) Delete(key string) bool { return db.c.Delete(key) }
 func (db *DB) Len() int               { return db.c.Len() }
 
 // Save writes a snapshot of the cache to path using xordb binary format.
-// The write is atomic: data goes to path+".tmp", fsynced, then renamed.
+// The write is atomic: data goes to a temp file, fsynced, then renamed.
 func (db *DB) Save(path string) error {
 	snap := db.c.Snapshot()
-	tmp := path + ".tmp"
-	f, err := os.Create(tmp)
+	dir := filepath.Dir(path)
+	f, err := os.CreateTemp(dir, ".xrdb-*.tmp")
 	if err != nil {
 		return fmt.Errorf("xordb: save: %w", err)
 	}
+	tmp := f.Name()
 	if err := cache.EncodeSnapshot(f, snap); err != nil {
 		f.Close()
 		os.Remove(tmp)
