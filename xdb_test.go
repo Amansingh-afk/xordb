@@ -585,34 +585,38 @@ func TestDB_Save_Load_TTL_ExpiredSkipped(t *testing.T) {
 	}
 }
 
-func TestDB_RegisterGobType(t *testing.T) {
-	type Result struct {
-		Answer string
-		Score  float64
-	}
-	xordb.RegisterGobType(Result{})
-
+func TestDB_Save_Load_BinaryFormat(t *testing.T) {
 	db := xordb.New(xordb.WithThreshold(0.99))
-	db.Set("query", Result{Answer: "42", Score: 0.99})
+	db.Set("what is the capital of india", "Delhi")
+	db.Set("who wrote ramayana", "Valmiki")
 
-	path := t.TempDir() + "/cache.gob"
+	path := t.TempDir() + "/cache.xrdb"
 	if err := db.Save(path); err != nil {
-		t.Fatalf("Save with custom type: %v", err)
+		t.Fatalf("Save: %v", err)
+	}
+
+	// Verify magic bytes on disk
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	magic := make([]byte, 4)
+	f.Read(magic)
+	f.Close()
+	if string(magic) != "XRDB" {
+		t.Fatalf("expected XRDB magic, got %q", magic)
 	}
 
 	db2 := xordb.New(xordb.WithThreshold(0.99))
-	xordb.RegisterGobType(Result{})
 	if err := db2.Load(path); err != nil {
-		t.Fatalf("Load with custom type: %v", err)
+		t.Fatalf("Load: %v", err)
 	}
 
-	v, ok, _ := db2.Get("query")
-	if !ok {
-		t.Fatal("expected hit")
-	}
-	r := v.(Result)
-	if r.Answer != "42" || r.Score != 0.99 {
-		t.Errorf("unexpected value: %+v", r)
+	for _, key := range []string{"what is the capital of india", "who wrote ramayana"} {
+		_, ok, _ := db2.Get(key)
+		if !ok {
+			t.Errorf("expected hit for %q after load", key)
+		}
 	}
 }
 

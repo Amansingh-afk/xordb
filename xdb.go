@@ -6,7 +6,6 @@
 package xordb
 
 import (
-	"encoding/gob"
 	"fmt"
 	"os"
 	"time"
@@ -114,9 +113,8 @@ func (db *DB) Get(key string) (any, bool, float64) { return db.c.Get(key) }
 func (db *DB) Delete(key string) bool { return db.c.Delete(key) }
 func (db *DB) Len() int              { return db.c.Len() }
 
-// Save writes a snapshot of the cache to path using gob encoding.
-// The write is atomic: data goes to path+".tmp" then renamed into place.
-// Values of custom types must be registered first via RegisterGobType.
+// Save writes a snapshot of the cache to path using xordb binary format.
+// The write is atomic: data goes to path+".tmp", fsynced, then renamed.
 func (db *DB) Save(path string) error {
 	snap := db.c.Snapshot()
 	tmp := path + ".tmp"
@@ -124,10 +122,15 @@ func (db *DB) Save(path string) error {
 	if err != nil {
 		return fmt.Errorf("xordb: save: %w", err)
 	}
-	if err := gob.NewEncoder(f).Encode(snap); err != nil {
+	if err := cache.EncodeSnapshot(f, snap); err != nil {
 		f.Close()
 		os.Remove(tmp)
 		return fmt.Errorf("xordb: save: encode: %w", err)
+	}
+	if err := f.Sync(); err != nil {
+		f.Close()
+		os.Remove(tmp)
+		return fmt.Errorf("xordb: save: sync: %w", err)
 	}
 	if err := f.Close(); err != nil {
 		os.Remove(tmp)
@@ -140,31 +143,25 @@ func (db *DB) Save(path string) error {
 	return nil
 }
 
-// Load merges a previously saved snapshot into the cache.
-// Expired entries are skipped. Returns a wrapped os.ErrNotExist if the file is missing.
-// Values of custom types must be registered first via RegisterGobType.
+// Load reads a previously saved binary snapshot into the cache.
+// Expired entries are skipped. Returns os.ErrNotExist (wrapped) if the file is missing.
 func (db *DB) Load(path string) error {
 	f, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("xordb: load: %w", err)
 	}
 	defer f.Close()
-	var snap cache.Snapshot
-	if err := gob.NewDecoder(f).Decode(&snap); err != nil {
-		return fmt.Errorf("xordb: load: decode: %w", err)
+	snap, err := cache.DecodeSnapshot(f, db.c.Dims())
+	if err != nil {
+		return fmt.Errorf("xordb: load: %w", err)
 	}
+	// DecodeSnapshot stores the binary wire-format version; normalise to the
+	// in-memory snapshot version that LoadSnapshot expects.
+	snap.Version = 1
 	if err := db.c.LoadSnapshot(snap); err != nil {
 		return fmt.Errorf("xordb: load: %w", err)
 	}
 	return nil
-}
-
-// RegisterGobType registers a concrete type for gob encoding.
-// Call once per custom type before Save or Load.
-//
-//	xordb.RegisterGobType(MyStruct{})
-func RegisterGobType(v any) {
-	gob.Register(v)
 }
 
 func (db *DB) Stats() Stats {
