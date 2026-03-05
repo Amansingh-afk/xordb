@@ -20,8 +20,8 @@ func TestSnapshot_RoundTrip(t *testing.T) {
 	c.Set("gamma", "C")
 
 	snap := c.Snapshot()
-	if snap.Version != 1 {
-		t.Fatalf("expected version 1 got %d", snap.Version)
+	if snap.Version != 2 {
+		t.Fatalf("expected version 2 got %d", snap.Version)
 	}
 	if len(snap.Entries) != 3 {
 		t.Fatalf("expected 3 entries got %d", len(snap.Entries))
