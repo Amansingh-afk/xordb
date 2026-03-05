@@ -407,6 +407,186 @@ func TestNew_InvalidThresholdAboveOne_Panics(t *testing.T) {
 	cache.New(enc, cache.Options{Threshold: 1.1, Capacity: 16})
 }
 
+// ── LSH integration ──────────────────────────────────────────────────────────
+
+func boolPtr(v bool) *bool { return &v }
+
+func newLSHCache(threshold float64, capacity int) *cache.Cache {
+	enc := hdc.NewNGramEncoder(hdc.DefaultConfig())
+	enabled := true
+	return cache.New(enc, cache.Options{
+		Threshold:  threshold,
+		Capacity:   capacity,
+		LSHEnabled: &enabled,
+	})
+}
+
+func TestCache_LSH_ExactHit(t *testing.T) {
+	c := newLSHCache(0.82, 512)
+	c.Set("hello world", 42)
+
+	v, ok, sim := c.Get("hello world")
+	if !ok {
+		t.Fatal("expected hit")
+	}
+	if v != 42 {
+		t.Fatalf("want 42, got %v", v)
+	}
+	if sim != 1.0 {
+		t.Fatalf("exact hit must return sim=1.0, got %.4f", sim)
+	}
+}
+
+func TestCache_LSH_Miss(t *testing.T) {
+	c := newLSHCache(0.82, 512)
+	c.Set("hello world", 42)
+
+	_, ok, _ := c.Get("how do you bake a chocolate cake")
+	if ok {
+		t.Fatal("expected miss for unrelated query")
+	}
+}
+
+func TestCache_LSH_SetUpdateDelete(t *testing.T) {
+	c := newLSHCache(0.82, 512)
+	c.Set("test key", "first")
+	c.Set("test key", "second") // update
+
+	v, ok, _ := c.Get("test key")
+	if !ok || v != "second" {
+		t.Fatalf("want second after update, got %v ok=%v", v, ok)
+	}
+
+	if !c.Delete("test key") {
+		t.Fatal("delete must return true")
+	}
+	_, ok, _ = c.Get("test key")
+	if ok {
+		t.Fatal("deleted entry must not be returned")
+	}
+}
+
+func TestCache_LSH_FallbackPreservesExactSemantics(t *testing.T) {
+	// With fallback=true (default), LSH-enabled cache should return same results as linear scan.
+	encCfg := hdc.DefaultConfig()
+	enc := hdc.NewNGramEncoder(encCfg)
+
+	enabled := true
+	cLSH := cache.New(enc, cache.Options{
+		Threshold:  0.65,
+		Capacity:   512,
+		LSHEnabled: &enabled,
+	})
+
+	cLinear := cache.New(enc, cache.Options{
+		Threshold:  0.65,
+		Capacity:   512,
+		LSHEnabled: boolPtr(false),
+	})
+
+	keys := []string{
+		"what is the capital of india",
+		"what is the capital of nepal",
+		"how to bake a chocolate cake",
+		"best programming languages 2024",
+	}
+	for _, k := range keys {
+		cLSH.Set(k, k)
+		cLinear.Set(k, k)
+	}
+
+	queries := []string{
+		"capital city of india",
+		"capital of nepal",
+		"chocolate cake recipe",
+		"best programming language",
+	}
+
+	for _, q := range queries {
+		vLSH, okLSH, _ := cLSH.Get(q)
+		vLinear, okLinear, _ := cLinear.Get(q)
+
+		if okLSH != okLinear {
+			t.Errorf("query %q: LSH ok=%v, linear ok=%v", q, okLSH, okLinear)
+		}
+		if okLSH && okLinear && vLSH != vLinear {
+			t.Errorf("query %q: LSH=%v, linear=%v", q, vLSH, vLinear)
+		}
+	}
+}
+
+func TestCache_LSH_NoFallback(t *testing.T) {
+	enc := hdc.NewNGramEncoder(hdc.DefaultConfig())
+	enabled := true
+	c := cache.New(enc, cache.Options{
+		Threshold:   0.82,
+		Capacity:    512,
+		LSHEnabled:  &enabled,
+		LSHFallback: boolPtr(false),
+	})
+	c.Set("hello world", 42)
+
+	// Exact key should still hit (same vector → same hash)
+	v, ok, _ := c.Get("hello world")
+	if !ok || v != 42 {
+		t.Fatalf("exact key must hit even without fallback, got ok=%v v=%v", ok, v)
+	}
+}
+
+func TestCache_LSH_AutoEnable(t *testing.T) {
+	// Capacity >= 256 should auto-enable LSH
+	enc := hdc.NewNGramEncoder(hdc.DefaultConfig())
+	c := cache.New(enc, cache.Options{Threshold: 0.82, Capacity: 256})
+	for i := 0; i < 50; i++ {
+		c.Set(fmt.Sprintf("key %d", i), i)
+	}
+	// Just verify it works without panic
+	c.Get("key 25")
+	s := c.Stats()
+	_ = s.LSHCandidates // field exists
+}
+
+func TestCache_LSH_AutoDisable(t *testing.T) {
+	// Capacity < 256 should not auto-enable LSH
+	enc := hdc.NewNGramEncoder(hdc.DefaultConfig())
+	c := cache.New(enc, cache.Options{Threshold: 0.82, Capacity: 16})
+	c.Set("hello", 1)
+	c.Get("hello")
+	s := c.Stats()
+	if s.LSHCandidates != 0 {
+		t.Fatal("LSH should not be auto-enabled for small capacity")
+	}
+}
+
+func TestCache_LSH_LRU_Eviction(t *testing.T) {
+	c := newLSHCache(0.99, 2)
+	c.Set("alpha", 1)
+	c.Set("beta", 2)
+	c.Set("gamma", 3) // evicts alpha
+
+	if c.Len() != 2 {
+		t.Fatalf("capacity=2 but len=%d", c.Len())
+	}
+	_, ok, _ := c.Get("alpha")
+	if ok {
+		t.Fatal("alpha should have been evicted")
+	}
+}
+
+func TestCache_LSH_Stats(t *testing.T) {
+	c := newLSHCache(0.82, 512)
+	c.Set("hello world", 42)
+	c.Get("hello world") // LSH hit
+
+	s := c.Stats()
+	if s.Hits != 1 {
+		t.Fatalf("want 1 hit, got %d", s.Hits)
+	}
+	if s.LSHCandidates == 0 {
+		t.Fatal("LSH candidates must be > 0 after a hit")
+	}
+}
+
 // ── benchmarks ────────────────────────────────────────────────────────────────
 
 func BenchmarkCache_Get_100Entries(b *testing.B) {
@@ -438,6 +618,60 @@ func BenchmarkCache_Set(b *testing.B) {
 		c.Set(fmt.Sprintf("key %d", i), i)
 	}
 }
+
+// diverseKeys generates n unique, semantically distinct keys using varied topics.
+func diverseKeys(n int) []string {
+	topics := []string{
+		"quantum computing algorithms",
+		"french pastry baking recipes",
+		"ancient roman military tactics",
+		"deep sea marine biology research",
+		"japanese woodworking techniques",
+		"astrophysics black hole theory",
+		"classical piano music composition",
+		"tropical rainforest ecology systems",
+		"medieval castle architecture design",
+		"advanced robotics engineering lab",
+		"organic chemistry molecular bonds",
+		"saharan desert climate patterns",
+		"norse mythology folklore legends",
+		"modern abstract painting styles",
+		"arctic wildlife conservation effort",
+		"blockchain distributed ledger tech",
+		"himalayan mountaineering expedition",
+		"renaissance sculpture art history",
+		"volcanic geology eruption models",
+		"artificial neural network training",
+	}
+	keys := make([]string, n)
+	for i := range keys {
+		keys[i] = fmt.Sprintf("%s variant %d details", topics[i%len(topics)], i)
+	}
+	return keys
+}
+
+func benchGetDiverse(b *testing.B, n int, lsh bool) {
+	b.Helper()
+	enc := hdc.NewNGramEncoder(hdc.DefaultConfig())
+	c := cache.New(enc, cache.Options{
+		Threshold:  0.82,
+		Capacity:   n + 100,
+		LSHEnabled: &lsh,
+	})
+	keys := diverseKeys(n)
+	for i, k := range keys {
+		c.Set(k, i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c.Get(keys[i%n])
+	}
+}
+
+func BenchmarkCache_Get_Linear_1000(b *testing.B)  { benchGetDiverse(b, 1000, false) }
+func BenchmarkCache_Get_LSH_1000(b *testing.B)     { benchGetDiverse(b, 1000, true) }
+func BenchmarkCache_Get_Linear_10000(b *testing.B) { benchGetDiverse(b, 10000, false) }
+func BenchmarkCache_Get_LSH_10000(b *testing.B)    { benchGetDiverse(b, 10000, true) }
 
 // ── TTL ───────────────────────────────────────────────────────────────────────
 

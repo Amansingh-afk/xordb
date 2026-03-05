@@ -41,6 +41,14 @@ func (v Vector) Data() []uint64 {
 
 func NumWords(dims int) int { return numWords(dims) }
 
+// Bit returns the value (0 or 1) of the bit at position pos.
+func (v Vector) Bit(pos int) uint64 {
+	return (v.data[pos/64] >> uint(pos%64)) & 1
+}
+
+// RawData returns a direct reference to the underlying words. Callers must not modify.
+func (v Vector) RawData() []uint64 { return v.data }
+
 func (v Vector) Clone() Vector {
 	data := make([]uint64, len(v.data))
 	copy(data, v.data)
