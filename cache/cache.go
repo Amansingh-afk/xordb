@@ -153,9 +153,7 @@ func (c *Cache) Delete(key string) bool {
 	return true
 }
 
-// Dims returns the vector dimensionality.
-func (c *Cache) Dims() int { return c.dims }
-
+// Len returns the current number of cached entries.
 func (c *Cache) Len() int {
 	c.mu.Lock()
 	n := c.lru.Len()

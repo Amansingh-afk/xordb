@@ -51,11 +51,16 @@ func defaultOptions() dbOptions {
 	}
 }
 
-func WithDims(n int) Option      { return func(o *dbOptions) { o.dims = n } }
-func WithThreshold(t float64) Option { return func(o *dbOptions) { o.threshold = t } }
-func WithCapacity(n int) Option  { return func(o *dbOptions) { o.capacity = n } }
-func WithNGramSize(n int) Option { return func(o *dbOptions) { o.ngram = n } }
-func WithSeed(s uint64) Option   { return func(o *dbOptions) { o.seed = s } }
+// WithDims sets the hypervector dimension (default 10000).
+// Higher values increase accuracy at the cost of memory and CPU.
+func WithDims(n int) Option { return func(o *dbOptions) { o.dims = n } }
+
+// WithThreshold sets the minimum similarity for a cache hit (default 0.82).
+// Must be in (0, 1]. Raise to require closer matches; lower to be more permissive.
+func WithThreshold(t float64) Option     { return func(o *dbOptions) { o.threshold = t } }
+func WithCapacity(n int) Option          { return func(o *dbOptions) { o.capacity = n } }
+func WithNGramSize(n int) Option         { return func(o *dbOptions) { o.ngram = n } }
+func WithSeed(s uint64) Option           { return func(o *dbOptions) { o.seed = s } }
 func WithStripPunctuation(v bool) Option { return func(o *dbOptions) { o.stripPunctuation = v } }
 
 // WithTTL sets the default TTL for cache entries. Zero = no expiry.
@@ -112,7 +117,7 @@ func (db *DB) SetWithTTL(key string, value any, ttl time.Duration) {
 func (db *DB) Get(key string) (any, bool, float64) { return db.c.Get(key) }
 
 func (db *DB) Delete(key string) bool { return db.c.Delete(key) }
-func (db *DB) Len() int              { return db.c.Len() }
+func (db *DB) Len() int               { return db.c.Len() }
 
 // Save writes a snapshot of the cache to path using xordb binary format.
 // The write is atomic: data goes to a temp file, fsynced, then renamed.
