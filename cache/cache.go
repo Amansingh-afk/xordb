@@ -153,7 +153,6 @@ func (c *Cache) Delete(key string) bool {
 	return true
 }
 
-// Len returns the current number of cached entries.
 func (c *Cache) Len() int {
 	c.mu.Lock()
 	n := c.lru.Len()
