@@ -251,6 +251,9 @@ db := xordb.New(opts ...Option)
 | `WithSeed(s)` | `0` | Encoder seed. DBs with different seeds are incompatible. |
 | `WithStripPunctuation(v)` | `false` | Strip punctuation before encoding. |
 | `WithTTL(d)` | `0` (no expiry) | Default time-to-live for entries. Expired entries are lazily reaped on next `Get`. |
+| `WithLSH(bool)` | auto | Enable/disable LSH indexing. Auto-enabled when capacity ≥ 256. |
+| `WithLSHParams(k, l)` | auto | Override auto-computed LSH parameters (k=bits sampled, l=tables). |
+| `WithLSHFallback(bool)` | `true` | Fall back to linear scan on LSH miss. Preserves exact semantics. |
 
 **With custom encoder (e.g. MiniLM):**
 
@@ -308,13 +311,15 @@ db.Stats() xordb.Stats
 
 ```go
 type Stats struct {
-    Entries     int
-    Hits        uint64
-    Misses      uint64
-    Sets        uint64
-    Expired     uint64
-    HitRate     float64
-    AvgSimOnHit float64
+    Entries       int
+    Hits          uint64
+    Misses        uint64
+    Sets          uint64
+    Expired       uint64
+    HitRate       float64
+    AvgSimOnHit   float64
+    LSHCandidates uint64   // total candidates evaluated via LSH across all Gets
+    LSHFallbacks  uint64   // number of times LSH missed and fell back to linear scan
 }
 ```
 
@@ -384,15 +389,15 @@ The model is stored at `~/.local/share/xordb/models/all-MiniLM-L6-v2.onnx`
 
 ### Cache lookups
 
-| Operation | Time | Notes |
-|-----------|------|-------|
-| `Set` (n-gram) | 532 µs | Encode + insert |
-| `Get` — 100 entries | 460 µs | Encode + scan |
-| `Get` — 1,000 entries | 820 µs | Encode + scan |
-| `Get` — 10,000 entries | 2.2 ms | Encode + scan |
+| Operation | Time (linear) | Time (LSH) | Notes |
+|-----------|---------------|------------|-------|
+| `Set` (n-gram) | 532 µs | — | Encode + insert |
+| `Get` — 100 entries | 460 µs | — | Encode + scan |
+| `Get` — 1,000 entries | 1.2 ms | 1.2 ms | ~Even at 1K |
+| `Get` — 10,000 entries | 3.1 ms | **1.6 ms** | **~1.9× faster with LSH** |
 
-Encoding dominates (~460µs for n-gram, ~5ms for MiniLM). The linear scan adds
-~67µs per 1,000 entries.
+Encoding dominates (~460µs for n-gram, ~5ms for MiniLM). Linear scan adds
+~67µs per 1,000 entries. LSH benefit grows with entry count and data diversity.
 
 ### Benchmark: xordb vs GPTCache
 
@@ -470,6 +475,7 @@ xordb/
 │
 ├── cache/
 │   ├── cache.go          Cache: Set, Get, Delete, LRU eviction
+│   ├── lsh.go            LSH index: bit-sampling hash, insert/remove/query
 │   ├── persist.go        Snapshot / LoadSnapshot (in-memory)
 │   ├── binary.go         Binary encode/decode (.xrdb format)
 │   └── cache_test.go
@@ -494,6 +500,47 @@ pull in the dependency if you import `xordb/embed`.
 
 ---
 
+## LSH indexing
+
+At scale, linear scanning every entry on `Get` becomes the bottleneck. xordb
+uses **Locality-Sensitive Hashing** (bit-sampling) to reduce lookups to
+sub-linear time.
+
+### How it works
+
+Each LSH table samples `k` random bit positions from the hypervector and packs
+them into a bucket key. Vectors that agree on all `k` bits land in the same
+bucket. With `L` independent tables, the probability of finding a similar entry
+is boosted to near-certainty for high-similarity pairs.
+
+- **Auto-enabled** when capacity ≥ 256 (disable with `WithLSH(false)`)
+- **Parameters auto-tuned** from threshold (override with `WithLSHParams(k, l)`)
+- **Fallback** to full linear scan on LSH miss (default: on, preserves exact semantics)
+
+### Tuning
+
+| Parameter | Effect |
+|-----------|--------|
+| Higher `k` | Fewer candidates per bucket → faster but lower recall |
+| Higher `L` | More tables → higher recall but more memory |
+| `WithLSHFallback(false)` | Skip linear scan on miss → faster but may miss edge cases |
+
+The auto-computed defaults target ~74% recall at threshold and ~98% at
+similarity 0.90. With fallback enabled (default), you get exact semantics —
+LSH just accelerates the common case.
+
+```go
+// Explicit LSH control
+db := xordb.New(
+    xordb.WithCapacity(10000),
+    xordb.WithLSH(true),               // force enable
+    xordb.WithLSHParams(14, 20),        // 14 bits, 20 tables
+    xordb.WithLSHFallback(true),        // fall back to scan on miss
+)
+```
+
+---
+
 ## Known limitations
 
 **N-gram encoder is not transformer-quality.** Character n-grams capture surface
@@ -501,9 +548,11 @@ similarity. "capital of India" vs "capital of Nepal" score ~0.77 because they
 share most characters. The default threshold of 0.82 avoids false positives but
 also misses looser paraphrases. Use the MiniLM encoder for real semantic matching.
 
-**Linear scan.** The cache does a full scan on every `Get`. At 10,000 entries
-this is ~2ms — fine for most caching use cases. LSH indexing is planned for
-larger scales.
+**Linear scan by default at small scale.** Below 256 entries, the cache does a
+full scan on every `Get` (~2ms at 10K entries). At 256+ entries, LSH indexing
+kicks in automatically for sub-linear lookups. With LSH enabled and fallback on
+(default), exact semantics are preserved — LSH narrows candidates first, and a
+full scan runs only if LSH misses. See the [LSH section](#lsh-indexing) below.
 
 **MiniLM adds binary size.** The ONNX model is ~90MB, downloaded separately.
 The `onnxruntime` shared library must be available on the system.
@@ -564,7 +613,7 @@ go run ./cmd/demo/ -repl
 - [x] Model management CLI (`xordb-model`)
 - [x] TTL expiration (lazy eviction on `Get`, global + per-entry override)
 - [x] Disk persistence (custom binary format, CRC-32, atomic writes)
-- [ ] LSH indexing for sub-linear lookup at scale
+- [x] LSH indexing for sub-linear lookup at scale
 - [ ] HTTP sidecar mode
 - [ ] SIMD assembly (`VPAND`, `VPOPCNTQ`)
 - [ ] Additional model support (Nomic Embed, Arctic)
