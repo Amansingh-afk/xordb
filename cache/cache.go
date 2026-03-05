@@ -19,6 +19,12 @@ type Options struct {
 	LSHL        int    // override auto-computed L; 0 = auto
 	LSHFallback *bool  // nil or true = fallback to linear scan on LSH miss
 	LSHSeed     uint64 // seed for LSH hash functions
+
+	LSHEnabled  *bool  // nil = auto (enabled if capacity >= 256)
+	LSHK        int    // override auto-computed k; 0 = auto
+	LSHL        int    // override auto-computed L; 0 = auto
+	LSHFallback *bool  // nil or true = fallback to linear scan on LSH miss
+	LSHSeed     uint64 // seed for LSH hash functions
 }
 
 func DefaultOptions() Options {
@@ -26,6 +32,15 @@ func DefaultOptions() Options {
 }
 
 type Stats struct {
+	Entries       int
+	Hits          uint64
+	Misses        uint64
+	Sets          uint64
+	Expired       uint64
+	HitRate       float64
+	AvgSimOnHit   float64
+	LSHCandidates uint64
+	LSHFallbacks  uint64
 	Entries       int
 	Hits          uint64
 	Misses        uint64
@@ -44,6 +59,8 @@ type entry struct {
 	ts       time.Time
 	deadline time.Time   // zero = never expires
 	lshKeys  []uint64    // one per LSH table, nil if LSH disabled
+	deadline time.Time   // zero = never expires
+	lshKeys  []uint64    // one per LSH table, nil if LSH disabled
 }
 
 // Cache — thread-safe semantic cache. Keys are encoded to hypervectors;
@@ -58,6 +75,16 @@ type Cache struct {
 	capacity  int
 	ttl       time.Duration
 
+	lsh         *lshIndex // nil if LSH disabled
+	lshFallback bool      // fallback to linear scan on LSH miss
+
+	hits          uint64
+	misses        uint64
+	sets          uint64
+	expired       uint64
+	simSum        float64
+	lshCandidates uint64
+	lshFallbacks  uint64
 	lsh         *lshIndex // nil if LSH disabled
 	lshFallback bool      // fallback to linear scan on LSH miss
 
@@ -95,7 +122,47 @@ func New(enc hdc.Encoder, opts Options) *Cache {
 		capacity:    opts.Capacity,
 		ttl:         opts.TTL,
 		lshFallback: fallback,
+
+	dims := enc.Encode("").Dims()
+
+	// LSH fallback defaults to true
+	fallback := true
+	if opts.LSHFallback != nil {
+		fallback = *opts.LSHFallback
 	}
+
+	c := &Cache{
+		enc:         enc,
+		dims:        dims,
+		lru:         list.New(),
+		index:       make(map[string]*list.Element),
+		threshold:   opts.Threshold,
+		capacity:    opts.Capacity,
+		ttl:         opts.TTL,
+		lshFallback: fallback,
+	}
+
+	// Determine if LSH should be enabled
+	lshEnabled := opts.LSHEnabled
+	if lshEnabled == nil {
+		auto := opts.Capacity >= 256
+		lshEnabled = &auto
+	}
+	if *lshEnabled {
+		k, l := opts.LSHK, opts.LSHL
+		if k == 0 || l == 0 {
+			ak, al := autoParams(opts.Threshold)
+			if k == 0 {
+				k = ak
+			}
+			if l == 0 {
+				l = al
+			}
+		}
+		c.lsh = newLSHIndex(dims, k, l, opts.LSHSeed)
+	}
+
+	return c
 
 	// Determine if LSH should be enabled
 	lshEnabled := opts.LSHEnabled
@@ -148,10 +215,18 @@ func (c *Cache) setWithTTL(key string, value any, ttl time.Duration) {
 		if c.lsh != nil && e.lshKeys != nil {
 			c.lsh.remove(elem, e.lshKeys)
 		}
+		// Remove old LSH entries before updating vector
+		if c.lsh != nil && e.lshKeys != nil {
+			c.lsh.remove(elem, e.lshKeys)
+		}
 		e.value = value
 		e.vec = vec
 		e.ts = now
 		e.deadline = dl
+		if c.lsh != nil {
+			e.lshKeys = c.lsh.hashVec(vec.RawData())
+			c.lsh.insert(elem, e.lshKeys)
+		}
 		if c.lsh != nil {
 			e.lshKeys = c.lsh.hashVec(vec.RawData())
 			c.lsh.insert(elem, e.lshKeys)
@@ -165,6 +240,14 @@ func (c *Cache) setWithTTL(key string, value any, ttl time.Duration) {
 	}
 
 	e := &entry{key: key, vec: vec, value: value, ts: now, deadline: dl}
+	if c.lsh != nil {
+		e.lshKeys = c.lsh.hashVec(vec.RawData())
+	}
+	elem := c.lru.PushFront(e)
+	c.index[key] = elem
+	if c.lsh != nil {
+		c.lsh.insert(elem, e.lshKeys)
+	}
 	if c.lsh != nil {
 		e.lshKeys = c.lsh.hashVec(vec.RawData())
 	}
@@ -188,6 +271,35 @@ func (c *Cache) Get(key string) (any, bool, float64) {
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	var bestElem *list.Element
+	var bestSim float64
+
+	if c.lsh != nil {
+		keys := c.lsh.hashVec(vec.RawData())
+		candidates := c.lsh.query(keys)
+		c.lshCandidates += uint64(len(candidates))
+
+		now := time.Now()
+		for _, elem := range candidates {
+			e := elem.Value.(*entry)
+			if c.isExpired(e, now) {
+				continue
+			}
+			if s := hdc.Similarity(vec, e.vec); s >= c.threshold && s > bestSim {
+				bestSim = s
+				bestElem = elem
+			}
+		}
+
+		// Fallback to linear scan if LSH missed
+		if bestElem == nil && c.lshFallback {
+			c.lshFallbacks++
+			bestElem, bestSim = c.scanLocked(vec)
+		}
+	} else {
+		bestElem, bestSim = c.scanLocked(vec)
+	}
 
 	var bestElem *list.Element
 	var bestSim float64
@@ -274,6 +386,15 @@ func (c *Cache) Stats() Stats {
 		AvgSimOnHit:   avgSim,
 		LSHCandidates: c.lshCandidates,
 		LSHFallbacks:  c.lshFallbacks,
+		Entries:       c.lru.Len(),
+		Hits:          c.hits,
+		Misses:        c.misses,
+		Sets:          c.sets,
+		Expired:       c.expired,
+		HitRate:       hitRate,
+		AvgSimOnHit:   avgSim,
+		LSHCandidates: c.lshCandidates,
+		LSHFallbacks:  c.lshFallbacks,
 	}
 }
 
@@ -316,6 +437,9 @@ func (c *Cache) evictLocked() {
 
 func (c *Cache) removeLocked(elem *list.Element) {
 	e := elem.Value.(*entry)
+	if c.lsh != nil && e.lshKeys != nil {
+		c.lsh.remove(elem, e.lshKeys)
+	}
 	if c.lsh != nil && e.lshKeys != nil {
 		c.lsh.remove(elem, e.lshKeys)
 	}
