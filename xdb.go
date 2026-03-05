@@ -16,13 +16,15 @@ import (
 )
 
 type Stats struct {
-	Entries     int
-	Hits        uint64
-	Misses      uint64
-	Sets        uint64
-	Expired     uint64
-	HitRate     float64
-	AvgSimOnHit float64
+	Entries       int
+	Hits          uint64
+	Misses        uint64
+	Sets          uint64
+	Expired       uint64
+	HitRate       float64
+	AvgSimOnHit   float64
+	LSHCandidates uint64
+	LSHFallbacks  uint64
 }
 
 // DB is a semantic cache. Safe for concurrent use.
@@ -40,6 +42,11 @@ type dbOptions struct {
 	seed             uint64
 	stripPunctuation bool
 	ttl              time.Duration
+
+	lshEnabled  *bool
+	lshK        int
+	lshL        int
+	lshFallback *bool
 }
 
 func defaultOptions() dbOptions {
@@ -62,6 +69,20 @@ func WithStripPunctuation(v bool) Option { return func(o *dbOptions) { o.stripPu
 // Expired entries are lazily cleaned during Get scans.
 func WithTTL(d time.Duration) Option { return func(o *dbOptions) { o.ttl = d } }
 
+// WithLSH enables or disables LSH indexing. Default: auto (enabled if capacity >= 256).
+func WithLSH(enabled bool) Option { return func(o *dbOptions) { o.lshEnabled = &enabled } }
+
+// WithLSHParams overrides auto-computed LSH parameters.
+func WithLSHParams(k, l int) Option {
+	return func(o *dbOptions) { o.lshK = k; o.lshL = l }
+}
+
+// WithLSHFallback controls whether a full linear scan is used when LSH misses.
+// Default: true (preserves exact semantics).
+func WithLSHFallback(fallback bool) Option {
+	return func(o *dbOptions) { o.lshFallback = &fallback }
+}
+
 // New creates a DB with the built-in n-gram encoder.
 func New(opts ...Option) *DB {
 	o := defaultOptions()
@@ -76,11 +97,7 @@ func New(opts ...Option) *DB {
 		ChunkSize:        128,
 		Seed:             o.seed,
 	})
-	return &DB{c: cache.New(enc, cache.Options{
-		Threshold: o.threshold,
-		Capacity:  o.capacity,
-		TTL:       o.ttl,
-	})}
+	return &DB{c: cache.New(enc, o.cacheOpts())}
 }
 
 // NewWithEncoder — plug in any encoder (e.g. xordb/embed MiniLM).
@@ -94,11 +111,7 @@ func NewWithEncoder(enc hdc.Encoder, opts ...Option) *DB {
 	for _, opt := range opts {
 		opt(&o)
 	}
-	return &DB{c: cache.New(enc, cache.Options{
-		Threshold: o.threshold,
-		Capacity:  o.capacity,
-		TTL:       o.ttl,
-	})}
+	return &DB{c: cache.New(enc, o.cacheOpts())}
 }
 
 func (db *DB) Set(key string, value any) { db.c.Set(key, value) }
@@ -166,12 +179,27 @@ func (db *DB) Load(path string) error {
 func (db *DB) Stats() Stats {
 	s := db.c.Stats()
 	return Stats{
-		Entries:     s.Entries,
-		Hits:        s.Hits,
-		Misses:      s.Misses,
-		Sets:        s.Sets,
-		Expired:     s.Expired,
-		HitRate:     s.HitRate,
-		AvgSimOnHit: s.AvgSimOnHit,
+		Entries:       s.Entries,
+		Hits:          s.Hits,
+		Misses:        s.Misses,
+		Sets:          s.Sets,
+		Expired:       s.Expired,
+		HitRate:       s.HitRate,
+		AvgSimOnHit:   s.AvgSimOnHit,
+		LSHCandidates: s.LSHCandidates,
+		LSHFallbacks:  s.LSHFallbacks,
+	}
+}
+
+func (o *dbOptions) cacheOpts() cache.Options {
+	return cache.Options{
+		Threshold:   o.threshold,
+		Capacity:    o.capacity,
+		TTL:         o.ttl,
+		LSHEnabled:  o.lshEnabled,
+		LSHK:        o.lshK,
+		LSHL:        o.lshL,
+		LSHFallback: o.lshFallback,
+		LSHSeed:     o.seed,
 	}
 }
