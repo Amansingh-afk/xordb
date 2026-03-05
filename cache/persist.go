@@ -98,12 +98,20 @@ func (c *Cache) injectLocked(es EntrySnapshot) {
 	if c.lru.Len() >= c.capacity {
 		c.evictLocked()
 	}
+	vec := hdc.FromWords(c.dims, es.VecData)
 	e := &entry{
 		key:      es.Key,
-		vec:      hdc.FromWords(c.dims, es.VecData),
+		vec:      vec,
 		value:    es.Value,
 		ts:       es.Ts,
 		deadline: es.Deadline,
 	}
-	c.index[es.Key] = c.lru.PushFront(e)
+	if c.lsh != nil {
+		e.lshKeys = c.lsh.hashVec(vec.RawData())
+	}
+	elem := c.lru.PushFront(e)
+	c.index[es.Key] = elem
+	if c.lsh != nil {
+		c.lsh.insert(elem, e.lshKeys)
+	}
 }
