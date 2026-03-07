@@ -26,6 +26,9 @@ type lshHashFunc struct {
 
 // newLSHIndex creates an LSH index with L tables, each using k random bit positions.
 func newLSHIndex(dims, k, l int, seed uint64) *lshIndex {
+	if k < 1 || k > 64 {
+		panic("lsh: k must be in [1, 64]")
+	}
 	rng := rand.New(rand.NewChaCha8([32]byte(seedToBytes(seed))))
 
 	hashes := make([]lshHashFunc, l)
@@ -53,6 +56,9 @@ func newLSHIndex(dims, k, l int, seed uint64) *lshIndex {
 //	k = clamp(ceil(-3.0 / log2(threshold)), 6, 24)
 //	l = clamp(ceil(log(0.1) / log(1 - threshold^k)), 8, 40)
 func autoParams(threshold float64) (k, l int) {
+	if threshold >= 1.0 {
+		return 6, 8
+	}
 	kf := math.Ceil(-3.0 / math.Log2(threshold))
 	k = clampInt(int(kf), 6, 24)
 
