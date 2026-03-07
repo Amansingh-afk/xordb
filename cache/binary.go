@@ -86,8 +86,10 @@ func DecodeSnapshot(r io.Reader, dims int) (Snapshot, error) {
 	}
 
 	// Compute upper bound on payload size to prevent unbounded reads.
+	// Use realistic per-entry sizes rather than maximum key/value lengths,
+	// which would make the limit effectively useless.
 	nw := hdc.NumWords(dims)
-	entryOverhead := int64(4 + maxKeyLen + int64(nw)*8 + 16 + 4 + maxValLen)
+	entryOverhead := int64(4 + 4096 + int64(nw)*8 + 16 + 4 + 1<<20)
 	maxPayload := int64(count) * entryOverhead
 	if maxPayload > maxPayloadLen {
 		maxPayload = maxPayloadLen
