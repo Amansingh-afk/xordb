@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"container/list"
 	"fmt"
 	"time"
 
@@ -34,10 +35,12 @@ func (c *Cache) Snapshot() Snapshot {
 	defer c.mu.Unlock()
 
 	now := time.Now()
+	var expired []*list.Element
 	entries := make([]EntrySnapshot, 0, c.lru.Len())
 	for elem := c.lru.Front(); elem != nil; elem = elem.Next() {
 		e := elem.Value.(*entry)
 		if c.isExpired(e, now) {
+			expired = append(expired, elem)
 			continue
 		}
 		entries = append(entries, EntrySnapshot{
@@ -47,6 +50,11 @@ func (c *Cache) Snapshot() Snapshot {
 			Ts:       e.ts,
 			Deadline: e.deadline,
 		})
+	}
+
+	for _, elem := range expired {
+		c.removeLocked(elem)
+		c.expired++
 	}
 
 	return Snapshot{
