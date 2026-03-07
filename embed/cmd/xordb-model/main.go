@@ -16,7 +16,7 @@ import (
 const (
 	modelURL    = "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx"
 	modelName   = "all-MiniLM-L6-v2.onnx"
-	modelSHA256 = "" // set for integrity check, empty = skip
+	modelSHA256 = "6fd5d72fe4589f189f8ebc006442dbb529bb7ce38f8082112682524616046452"
 )
 
 func main() {
@@ -109,43 +109,56 @@ func downloadModel(force bool) error {
 	return nil
 }
 
+const maxDownloadSize = 500 * 1024 * 1024 // 500 MB
+
 func downloadFile(dest, url string) error {
 	out, err := os.Create(dest)
 	if err != nil {
 		return fmt.Errorf("creating file: %w", err)
 	}
-	defer out.Close()
 
 	resp, err := http.Get(url) //nolint:gosec
 	if err != nil {
+		out.Close()
 		return fmt.Errorf("HTTP request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		out.Close()
 		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
 	}
 
+	limited := io.LimitReader(resp.Body, maxDownloadSize+1)
 	var written int64
 	buf := make([]byte, 32*1024)
 	for {
-		n, readErr := resp.Body.Read(buf)
+		n, readErr := limited.Read(buf)
 		if n > 0 {
 			if _, writeErr := out.Write(buf[:n]); writeErr != nil {
+				out.Close()
 				return fmt.Errorf("writing file: %w", writeErr)
 			}
 			written += int64(n)
+			if written > maxDownloadSize {
+				out.Close()
+				return fmt.Errorf("download exceeds %d MB limit", maxDownloadSize/(1024*1024))
+			}
 			fmt.Printf("\r  %.1f MB downloaded...", float64(written)/(1024*1024))
 		}
 		if readErr == io.EOF {
 			break
 		}
 		if readErr != nil {
+			out.Close()
 			return fmt.Errorf("reading response: %w", readErr)
 		}
 	}
 	fmt.Println()
 
+	if err := out.Close(); err != nil {
+		return fmt.Errorf("closing file: %w", err)
+	}
 	return nil
 }
 
