@@ -154,6 +154,10 @@ func (e *MiniLMEncoder) Embed(text string) ([]float32, error) {
 	defer output.Destroy()
 
 	e.mu.Lock()
+	if e.session == nil {
+		e.mu.Unlock()
+		return nil, fmt.Errorf("embed: encoder is closed")
+	}
 	err = e.session.Run(
 		[]ort.ArbitraryTensor{inputIDs, attentionMask, tokenTypeIDs},
 		[]ort.ArbitraryTensor{output},
@@ -185,6 +189,9 @@ func (e *MiniLMEncoder) Close() error {
 func meanPool(data []float32, seqLen, maxSeqLen, embDims int) []float32 {
 	result := make([]float32, embDims)
 	if seqLen == 0 {
+		return result
+	}
+	if len(data) < seqLen*embDims {
 		return result
 	}
 
@@ -237,6 +244,9 @@ func ensureONNXRuntime() error {
 }
 
 func DestroyONNXRuntime() error {
+	if ortErr != nil {
+		return nil // environment was never initialized successfully
+	}
 	return ort.DestroyEnvironment()
 }
 
