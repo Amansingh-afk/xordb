@@ -131,6 +131,9 @@ func (c *Cache) SetWithTTL(key string, value any, ttl time.Duration) {
 }
 
 func (c *Cache) setWithTTL(key string, value any, ttl time.Duration) {
+	if ttl < 0 {
+		panic("cache: TTL must not be negative")
+	}
 	vec := c.enc.Encode(key)
 
 	c.mu.Lock()
@@ -201,6 +204,8 @@ func (c *Cache) Get(key string) (any, bool, float64) {
 		for _, elem := range candidates {
 			e := elem.Value.(*entry)
 			if c.isExpired(e, now) {
+				c.removeLocked(elem)
+				c.expired++
 				continue
 			}
 			if s := hdc.Similarity(vec, e.vec); s >= c.threshold && s > bestSim {
