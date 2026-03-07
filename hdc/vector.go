@@ -42,7 +42,11 @@ func (v Vector) Data() []uint64 {
 func NumWords(dims int) int { return numWords(dims) }
 
 // Bit returns the value (0 or 1) of the bit at position pos.
+// Panics if pos is out of range [0, dims).
 func (v Vector) Bit(pos int) uint64 {
+	if pos < 0 || pos >= v.dims {
+		panic("hdc: Bit position out of range")
+	}
 	return (v.data[pos/64] >> uint(pos%64)) & 1
 }
 

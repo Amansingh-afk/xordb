@@ -1,6 +1,7 @@
 package hdc
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -207,7 +208,7 @@ func TestEncode_Pooled_ConcurrentSafe(t *testing.T) {
 			for i := 0; i < 10; i++ {
 				v := enc.Encode(text)
 				if Similarity(ref, v) != 1.0 {
-					errs <- nil // signal failure
+					errs <- fmt.Errorf("goroutine got similarity != 1.0")
 					return
 				}
 			}
@@ -215,6 +216,8 @@ func TestEncode_Pooled_ConcurrentSafe(t *testing.T) {
 		}()
 	}
 	for i := 0; i < 10; i++ {
-		<-errs
+		if err := <-errs; err != nil {
+			t.Fatal(err)
+		}
 	}
 }
