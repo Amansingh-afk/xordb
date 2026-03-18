@@ -9,7 +9,7 @@ cd "$ROOT_DIR"
 echo ""
 echo "┌──────────────────────────────────────────────────────────┐"
 echo "│     xordb vs GPTCache — Semantic Cache Benchmark         │"
-echo "│     75 queries · matches + negatives + edge cases      │"
+echo "│     matches + negatives + hard negatives                   │"
 echo "└──────────────────────────────────────────────────────────┘"
 echo ""
 
@@ -41,7 +41,7 @@ docker run --rm gptcache-bench
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  All 3 rounds ran on the same 75-query dataset."
-echo "  Compare: accuracy, false positives, latency, memory."
+echo "  All 3 rounds ran on the same 444-query dataset (QQP)."
+echo "  Compare: precision, recall, F1, FP rate, latency, memory."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""

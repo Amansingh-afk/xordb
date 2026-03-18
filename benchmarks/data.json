@@ -1,0 +1,3110 @@
+[
+  {
+    "cached": "How is the life of a math student? Could you describe your own experiences?",
+    "lookup": "Which level of prepration is enough for the exam jlpt5?",
+    "answer": "[Cached response #0]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "How do I control my horny emotions?",
+    "lookup": "How do you control your horniness?",
+    "answer": "[Cached response #1]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What causes stool color to change to yellow?",
+    "lookup": "What can cause stool to come out as little balls?",
+    "answer": "[Cached response #2]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What can one do after MBBS?",
+    "lookup": "What do i do after my MBBS ?",
+    "answer": "[Cached response #3]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Where can I find a power outlet for my laptop at Melbourne Airport?",
+    "lookup": "Would a second airport in Sydney, Australia be needed if a high-speed rail link was created between Melbourne and Sydney?",
+    "answer": "[Cached response #4]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "How is air traffic controlled?",
+    "lookup": "How do you become an air traffic controller?",
+    "answer": "[Cached response #5]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the best self help book you have read? Why? How did it change your life?",
+    "lookup": "What are the top self help books I should read?",
+    "answer": "[Cached response #6]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Do you need a passport to go to Jamaica from the United States?",
+    "lookup": "How can I move to Jamaica?",
+    "answer": "[Cached response #7]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "What will be Hillary Clinton's policy towards India if she becomes president?",
+    "lookup": "What will be Hilary Clinton's policy towards India if she become President?",
+    "answer": "[Cached response #8]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the responsibility of SAP ERP key user?",
+    "lookup": "What is a qualified SAP ERP key user?",
+    "answer": "[Cached response #9]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Which is the best book to study TENSOR for general relativity from basic?",
+    "lookup": "Which is the best book for tensor calculus?",
+    "answer": "[Cached response #10]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do you thank a Disneyland cast member?",
+    "lookup": "How can I go to Disneyland with little money?",
+    "answer": "[Cached response #11]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "What are the coolest Android hacks and tricks you know?",
+    "lookup": "What are some cool hacks for Android phones?",
+    "answer": "[Cached response #12]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "If you received a check from Donald Knuth, what did you do and why did you get it?",
+    "lookup": "How can I contact Donald Knuth?",
+    "answer": "[Cached response #13]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "Which are the best motivational videos?",
+    "lookup": "What are some of the best motivational clips?",
+    "answer": "[Cached response #14]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I lose weight fast?",
+    "lookup": "What is the best way to reduce weight fast?",
+    "answer": "[Cached response #15]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "If a die is rolled, what is the probability that the number is greater than 4?",
+    "lookup": "If a die is rolled. what is the probability that the number on top is a 3?",
+    "answer": "[Cached response #16]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are the best resources for learning Morse code?",
+    "lookup": "What is Morse code?",
+    "answer": "[Cached response #17]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How does an IQ test work and what is determined from an IQ test?",
+    "lookup": "How does IQ test works?",
+    "answer": "[Cached response #18]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is it safe to use Xiaomi mobile phones?",
+    "lookup": "Is it safe or unsafe to use Xiaomi Products?",
+    "answer": "[Cached response #19]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the best books on cosmology?",
+    "lookup": "Which is the best book for cosmology?",
+    "answer": "[Cached response #20]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why did it take so long for NASA to find water on Mars?",
+    "lookup": "How much chances are there that NASA already knew that there is water on Mars?",
+    "answer": "[Cached response #21]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Where can I learn to invest in stocks?",
+    "lookup": "How can I learn more about stocks?",
+    "answer": "[Cached response #22]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What's the best way to spend a long weekend?",
+    "lookup": "How do I spend my long weekend in an effective way?",
+    "answer": "[Cached response #23]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do people join ISIS?",
+    "lookup": "Why do people join ISIS?",
+    "answer": "[Cached response #24]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some of the most beautiful houses in the world?",
+    "lookup": "Which are some of the most beautiful houses around the world?",
+    "answer": "[Cached response #25]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best lesson we should learn from life?",
+    "lookup": "What's the most important lesson about life?",
+    "answer": "[Cached response #26]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "If Trump were elected, would he pardon Edward Snowden?",
+    "lookup": "What is Trump's take on Edward Snowden?",
+    "answer": "[Cached response #27]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I draw bending moment and shear force diagram for beams?",
+    "lookup": "How do I draw shear force and bending moment diagrams (strength of materials)?",
+    "answer": "[Cached response #28]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What would happen if water disappeared from the earth?",
+    "lookup": "What would happen if ants disappeared from the Earth?",
+    "answer": "[Cached response #29]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What's the easiest way to learn Java programs?",
+    "lookup": "What is the easiest way to learn java programming?",
+    "answer": "[Cached response #30]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the best websites for entrepreneurs?",
+    "lookup": "What are the best websites for entrepreneur?",
+    "answer": "[Cached response #31]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is it safe to travel to Italy now?",
+    "lookup": "Is it safe to travel through Italy?",
+    "answer": "[Cached response #32]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How should I make myself brave?",
+    "lookup": "How can I be more brave?",
+    "answer": "[Cached response #33]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the reasons that people dislike Hillary Clinton?",
+    "lookup": "Why do so many people say Hillary Clinton is evil?",
+    "answer": "[Cached response #34]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "When/how did you realize were not straight?",
+    "lookup": "When/how did you realize you were gay/bisexual? Were you in denial?",
+    "answer": "[Cached response #35]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What the best science documentaries?",
+    "lookup": "What are some good science documentaries?",
+    "answer": "[Cached response #36]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why do we, as human beings, use water for?",
+    "lookup": "What do we use water for?",
+    "answer": "[Cached response #37]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I join to IB India?",
+    "lookup": "How do I get into IB india?",
+    "answer": "[Cached response #38]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some good ways for international students in the USA to overcome culture shock?",
+    "lookup": "How can you overcome the depression, homesickness and anxiety of culture shock?",
+    "answer": "[Cached response #39]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What if every human can read the other person's thoughts? How would life be in such a scenario?",
+    "lookup": "What would happen if every human being can read the thoughts of all other human beings?",
+    "answer": "[Cached response #40]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How will the ban on existing 500 and 1000 rupee note affect India? What are the pros and cons?",
+    "lookup": "What are the advantages and disadvantages of 500 and 1000 rupees ban in India?",
+    "answer": "[Cached response #41]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the life lessons that Batman teaches us?",
+    "lookup": "What are the life lessons one can learn from Batman?",
+    "answer": "[Cached response #42]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Can mechanical energy be conserved?",
+    "lookup": "When and how is mechanical energy not conserved?",
+    "answer": "[Cached response #43]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the Sahara, and how do the average temperatures there compare to the ones in the Taklamakan Desert?",
+    "lookup": "What is the Sahara, and how do the average temperatures there compare to the ones in the Registan Desert?",
+    "answer": "[Cached response #44]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I lose 4kg weight?",
+    "lookup": "What are the ways of losing weight?",
+    "answer": "[Cached response #45]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I create a stage name for myself?",
+    "lookup": "How can I create a stage name?",
+    "answer": "[Cached response #46]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Can you grow a tree in zero gravity?",
+    "lookup": "How do trees grow in a zero gravity environment?",
+    "answer": "[Cached response #47]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What type of government did Sparta have?",
+    "lookup": "What types of government did Aristotle want?",
+    "answer": "[Cached response #48]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the saddest thing about you, and why?",
+    "lookup": "What is the happiest thing about you? What is the saddest thing about you?",
+    "answer": "[Cached response #49]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are major and defining characteristics of Americans?",
+    "lookup": "What are some good characteristics of the American culture?",
+    "answer": "[Cached response #50]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "HTTP sites are not working while HTTPS sites are working in Google Chrome? What are some solutions?",
+    "lookup": "Why are the HTTPS sites not working?",
+    "answer": "[Cached response #51]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are the differences between BitBucket and GitHub?",
+    "lookup": "What are the pros and cons of GitHub versus Bitbucket?",
+    "answer": "[Cached response #52]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What do Russian people think of Gorbachev?",
+    "lookup": "What is the perception of Mikhail Gorbachev among Russians today?",
+    "answer": "[Cached response #53]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is your review of South Indian Queens?",
+    "lookup": "What is your review of South Indians?",
+    "answer": "[Cached response #54]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Why does Quora mark my perfectly semantic question as, \"Needs Improvement\"?",
+    "lookup": "What should I do if Quora marks my question as \"Needs Improvement\"?",
+    "answer": "[Cached response #55]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I meet new people on Skype?",
+    "lookup": "What is the best way to meet new people?",
+    "answer": "[Cached response #56]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are your new year resolutions for 2017?",
+    "lookup": "What is your New Year Resolution for 2017?",
+    "answer": "[Cached response #57]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How will Donald trump's Victory would affect India's relationship with USA?",
+    "lookup": "What is the impact of Donald Trump's victory on Indian interests?",
+    "answer": "[Cached response #58]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I improve my English in all aspects?",
+    "lookup": "How can I continue to improve my English?",
+    "answer": "[Cached response #59]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I prepare for interviews?",
+    "lookup": "How can I prepare for my interview?",
+    "answer": "[Cached response #60]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How will Donald Trump's presidency affect international students?",
+    "lookup": "What would be the effect of Trump's presidency on international Master's students who plan to work in the US after completing the degree?",
+    "answer": "[Cached response #61]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are stars made of?",
+    "lookup": "What are stars made out of?",
+    "answer": "[Cached response #62]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I lose 10 Kilos?",
+    "lookup": "How should I lose weight?",
+    "answer": "[Cached response #63]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do you post a question on Quora?",
+    "lookup": "How do I post here?",
+    "answer": "[Cached response #64]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why should we learn photography?",
+    "lookup": "What is there to learn in photography?",
+    "answer": "[Cached response #65]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which are the best books to learn C++?",
+    "lookup": "What is the best book for DEV C++?",
+    "answer": "[Cached response #66]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I earn extra money during my free time?",
+    "lookup": "How do I earn money in my free time?",
+    "answer": "[Cached response #67]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Where Can My Business Capital injection Come From?",
+    "lookup": "Where Can My Small Business Capital Injection Come From?",
+    "answer": "[Cached response #68]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is Newton's third law of motion? Can you explain what is an action and a reaction with examples?",
+    "lookup": "Can someone explain Newton's third law of motion?",
+    "answer": "[Cached response #69]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are micronutrients and macronutrients? How do you distinguish the difference between micronutrients and macronutrients?",
+    "lookup": "How do you distinguish the difference between micronutrients and macronutrients?",
+    "answer": "[Cached response #70]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the best online coding bootcamps?",
+    "lookup": "What is best online coding bootcamp 2016?",
+    "answer": "[Cached response #71]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "To all the busy and successful people: What does your daily schedule look like?",
+    "lookup": "What does the daily schedule of those successful people look like?",
+    "answer": "[Cached response #72]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What does Americans think of Vietnamese people?",
+    "lookup": "How do Americans view Vietnamese people?",
+    "answer": "[Cached response #73]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How Trump's presidency affect the Indian students who are planning to study in the US?",
+    "lookup": "How bad can Trump's election as president be for students aspiring to study in US?",
+    "answer": "[Cached response #74]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What Indian government will do to old 500/1000 rs notes once they will collect it from people?",
+    "lookup": "What will the government do with the old notes of Rs 500 and Rs 1000?",
+    "answer": "[Cached response #75]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Where or what is the strangest place you have ever had sex?",
+    "lookup": "Where is the oddest place you've had sex?",
+    "answer": "[Cached response #76]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is a credit score?",
+    "lookup": "What is credit score?",
+    "answer": "[Cached response #77]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which is the best hollywood movie you have seen?",
+    "lookup": "Which are the best Hollywood movies of all time?",
+    "answer": "[Cached response #78]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is black money and how can it effect the economy of a country?",
+    "lookup": "What is the effect of black money on India's macro economy?",
+    "answer": "[Cached response #79]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the difference between fact and opinion?",
+    "lookup": "What is difference between fact and opinion/view?",
+    "answer": "[Cached response #80]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What will the people who have Black Money in Swiss Bank do after the demonetisation of 1000 & 500 note?",
+    "lookup": "Will the corrupt politicians still have their black money safe in Swiss Bank even after the scrapping of old Rs 500 and Rs 1000 note?",
+    "answer": "[Cached response #81]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the best places in delhi to chill with your best friend?",
+    "lookup": "What are the best places to hangout with friends in delhi?",
+    "answer": "[Cached response #82]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How is technology helping us?",
+    "lookup": "How can technology help us?",
+    "answer": "[Cached response #83]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are ways of earning money online?",
+    "lookup": "How could I make money online?",
+    "answer": "[Cached response #84]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the role of a brand manager?",
+    "lookup": "What is the typical role of a brand manager?",
+    "answer": "[Cached response #85]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What's the best smartphone in the market right now?",
+    "lookup": "Which is the best smartphone right now and why?",
+    "answer": "[Cached response #86]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How is depression cured without a therapist?",
+    "lookup": "Has anyone overcome depression by themselves without external help?",
+    "answer": "[Cached response #87]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How is US president Donald Trump important for India?",
+    "lookup": "What Can happen to India if Donald Trump becomes president?",
+    "answer": "[Cached response #88]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What does it take to be a top writer on Quora?",
+    "lookup": "How can I become Top Writer on Quora, what should I care most in this process?",
+    "answer": "[Cached response #89]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best free VPN?",
+    "lookup": "What are the best Free VPN for Indonesia?",
+    "answer": "[Cached response #90]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What's the difference between a promise and a callback in Javascript?",
+    "lookup": "What is the difference between Javascript, JSP, Node.js and EJS?",
+    "answer": "[Cached response #91]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do I recover my forgotten Gmail password?",
+    "lookup": "How do I recover my Gmail password when I don't remember my recovery mail ID?",
+    "answer": "[Cached response #92]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What's the layman explanation of Godel's incompleteness theorem?",
+    "lookup": "What is an explanation of Gödel's Incompleteness Theorems suitable for a 10 year-old?",
+    "answer": "[Cached response #93]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What does it mean when I dreamed of someone and said they're dying?",
+    "lookup": "What does it mean when I dream about somebody dying?",
+    "answer": "[Cached response #94]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do I know if my business partner is honest?",
+    "lookup": "How do I know if I can trust my business partner?",
+    "answer": "[Cached response #95]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Is England in Britain? What is the difference between England, Britain and the UK?",
+    "lookup": "What is the difference between England, Wales, Scotland, Ireland, Britain, Great Britain, United Kingdom, the British Isles?",
+    "answer": "[Cached response #96]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "If vacuum energy is created as space expands, can infinite energy be created?",
+    "lookup": "Is vacuum energy the same as dark energy? is it infinite?",
+    "answer": "[Cached response #97]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "At what time should I drink green tea to be fit?",
+    "lookup": "Does green chai tea assist with weight loss?",
+    "answer": "[Cached response #98]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Do we need smaller states?",
+    "lookup": "Can India develop faster if bigger states are divided into smaller states?",
+    "answer": "[Cached response #99]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Could I buy a civilianized version of a fighter jet?",
+    "lookup": "Can I buy a fighter jet?",
+    "answer": "[Cached response #100]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I access hackforums.net?",
+    "lookup": "How do I access hackforums.net?",
+    "answer": "[Cached response #101]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How to convert red, yellow, and white RCA cables to HDMI?",
+    "lookup": "How do you convert RCA to HDMI?",
+    "answer": "[Cached response #102]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can we earn money from Google?",
+    "lookup": "How can I earn money from google?",
+    "answer": "[Cached response #103]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which is the best online shopping websites?",
+    "lookup": "Which is the best online shopping?",
+    "answer": "[Cached response #104]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Do astronomers' know where the center of the universe is?",
+    "lookup": "Is there a center in the universe? If so, do we know where is it?",
+    "answer": "[Cached response #105]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why should I study physics?",
+    "lookup": "Why do people study physics?",
+    "answer": "[Cached response #106]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why does the inequality sign change when both sides are multiplied or divided by a negative number?",
+    "lookup": "Does the sign of an inequality change when multiplied by a variable?",
+    "answer": "[Cached response #107]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I modify apk files?",
+    "lookup": "What is the best way to edit APK files?",
+    "answer": "[Cached response #108]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which exercise type help you to increase your height?",
+    "lookup": "How do I increase my height?",
+    "answer": "[Cached response #109]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the average IQ of a human?",
+    "lookup": "What is the iq of the average person?",
+    "answer": "[Cached response #110]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the must have dishes in your city?",
+    "lookup": "Could you recommend some special dishes of your city?",
+    "answer": "[Cached response #111]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the purpose of US military assistance to Egypt?",
+    "lookup": "What are the purpose and the justification of US military help to Egypt?",
+    "answer": "[Cached response #112]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Are the notes of Rs. 2000 really embedded with a GPS chip?",
+    "lookup": "How does the embedded NGC technology of the Rs. 2000 note works?",
+    "answer": "[Cached response #113]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Has Ancient History been scientifically tested?",
+    "lookup": "Has Ancient Egypt been scientifically tested?",
+    "answer": "[Cached response #114]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why did Trump win the Presidency?",
+    "lookup": "How did Donald Trump win despite projections that he would fail?",
+    "answer": "[Cached response #115]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why wasn't Leonardo DiCaprio not nominated for Titanic?",
+    "lookup": "Why wasn't Leonardo DiCaprio Oscar-nominated for Titanic (movie)?",
+    "answer": "[Cached response #116]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Can we expect time travel to become a reality?",
+    "lookup": "How is time travel possible?",
+    "answer": "[Cached response #117]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do mountain ranges form, and what are some of the major mountain ranges in Oklahoma?",
+    "lookup": "How do mountain ranges in Oklahoma differ from mountain ranges in Idaho?",
+    "answer": "[Cached response #118]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is there a directory of landline individual phone numbers?",
+    "lookup": "Is there a directory of individual landline and cell phone telephone numbers?",
+    "answer": "[Cached response #119]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which operating system do Google engineers use?",
+    "lookup": "What operating system do programmers and developers at Google use?",
+    "answer": "[Cached response #120]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is 0 divided by infinity?",
+    "lookup": "What is 0 DIVIDED by 0?",
+    "answer": "[Cached response #121]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is there proof that alien life exists?",
+    "lookup": "Is there any evidence of alien life in space?",
+    "answer": "[Cached response #122]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the exam pattern for CAT 2016?",
+    "lookup": "What is the pattern for CAT 2016?",
+    "answer": "[Cached response #123]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Modi's announcement on banning 500 and 1000 currency notes. How would it affect economy?",
+    "lookup": "What are the economic implications of banning 500 and 1000 rupee notes?",
+    "answer": "[Cached response #124]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best way to learn and practice C programming?",
+    "lookup": "How should I start to learn c language?",
+    "answer": "[Cached response #125]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Astrology: I am a Capricorn Sun Cap moon and cap rising...what does that say about me?",
+    "lookup": "I'm a triple Capricorn (Sun, Moon and ascendant in Capricorn) What does this say about me?",
+    "answer": "[Cached response #126]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How was NEET phase 2, compared to phase 1?",
+    "lookup": "Was NEET 2 tougher than NEET 1?",
+    "answer": "[Cached response #127]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why are Muslims prohibited to eat pork?",
+    "lookup": "Do Muslims eat pork?",
+    "answer": "[Cached response #128]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What can I do after having diploma in mechanical engineering?",
+    "lookup": "What after mechanical engineering?",
+    "answer": "[Cached response #129]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Who is the best Indian fielder ever?",
+    "lookup": "Who is the all time best fielder in Indian Cricket team?",
+    "answer": "[Cached response #130]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I hire a legit hacker?",
+    "lookup": "How do l contact a hacker?",
+    "answer": "[Cached response #131]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What do you do to make your baby laugh?",
+    "lookup": "What is a sure way to make your baby laugh?",
+    "answer": "[Cached response #132]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is this a German Shepherd dog?",
+    "lookup": "Are german shepherd dogs loyal?",
+    "answer": "[Cached response #133]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is falling in love with someone who loves someone else?",
+    "lookup": "What can I do if I fall in love with someone who doesn't love me?",
+    "answer": "[Cached response #134]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is Workday software? Is it easy to learn it?",
+    "lookup": "Which drawing software is easy to learn in mechanical?",
+    "answer": "[Cached response #135]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Is calcium a liquid?",
+    "lookup": "Is calcium flammable?",
+    "answer": "[Cached response #136]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How's the placement in chemical engineering at IIT BHU for an M.Tech?",
+    "lookup": "How is the placement in chemical engineering at IIT BHU?",
+    "answer": "[Cached response #137]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are your 3 favourite podcasts?",
+    "lookup": "What are your favourite German podcasts and why?",
+    "answer": "[Cached response #138]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Do you support TPP, yes or no?",
+    "lookup": "Why do you support the TPP?",
+    "answer": "[Cached response #139]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do you measure quantum vibration?",
+    "lookup": "How do you measure vibration?",
+    "answer": "[Cached response #140]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are the best discos in newyork?",
+    "lookup": "Simple talking words in kannada?",
+    "answer": "[Cached response #141]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "What was your worst experience in China?",
+    "lookup": "What is your worst experience?",
+    "answer": "[Cached response #142]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How would one ask a bank teller out?",
+    "lookup": "How should I ask this bank teller out?",
+    "answer": "[Cached response #143]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Can gun control prevent assault?",
+    "lookup": "Can gun control prevent a robbry?",
+    "answer": "[Cached response #144]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are some life hacks for college students?",
+    "lookup": "What are some life hacks for students?",
+    "answer": "[Cached response #145]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Do aliens exist? What is some evidence regarding it?",
+    "lookup": "Do aliens really exist?",
+    "answer": "[Cached response #146]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How is the movie The Man who knew infinity?",
+    "lookup": "What do you think about the movie, The man who knew infinity?",
+    "answer": "[Cached response #147]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some excellent signals and system books suggestions?",
+    "lookup": "What are the best Books for Signals And Systems?",
+    "answer": "[Cached response #148]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is trump playing to lose?",
+    "lookup": "Is trump trying to lose?",
+    "answer": "[Cached response #149]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Who will be the USA next President?",
+    "lookup": "Do you think Trump will be the next president?",
+    "answer": "[Cached response #150]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some good methods to studying?",
+    "lookup": "How can I improve my studying?",
+    "answer": "[Cached response #151]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How is Donald Trump in person?",
+    "lookup": "What is it like to meet Donald Trump?",
+    "answer": "[Cached response #152]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is culture integration? What are some examples?",
+    "lookup": "What are some examples of cultural integration?",
+    "answer": "[Cached response #153]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some characteristics of eccentric and concentric contractions?",
+    "lookup": "What are some symptoms of eccentric and concentric contractions?",
+    "answer": "[Cached response #154]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How would one train in mountaineering and become a mountain guide?",
+    "lookup": "How can I become a mountain guide?",
+    "answer": "[Cached response #155]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "If energy is not conserved in an expanding universe, is potential energy infinite?",
+    "lookup": "If vacuum energy is created as space expands, can infinite energy be created?",
+    "answer": "[Cached response #156]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which one is the best, Linux Mint or Ubuntu?",
+    "lookup": "Is Linux Mint a good alternative to Ubuntu? Are there any differences between the two?",
+    "answer": "[Cached response #157]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I overcome fear in public speaking?",
+    "lookup": "How can I get over the fear of public speaking?",
+    "answer": "[Cached response #158]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the scope for MBA marketing graduates in sales & marketing in hospitality industry?",
+    "lookup": "What is the scope for MBA marketing graduates in hospitality sector sales & marketing?",
+    "answer": "[Cached response #159]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best programs for mechanical engineerings?",
+    "lookup": "What is the best additional course for mechanical engineers?",
+    "answer": "[Cached response #160]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Do you believe in fate or free will?",
+    "lookup": "Do you believe in free will or destiny? Why?",
+    "answer": "[Cached response #161]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the things I need to learn hacking?",
+    "lookup": "What are the requirements to learn hacking?",
+    "answer": "[Cached response #162]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the best weight transformation stories?",
+    "lookup": "What is the best weight loss story?",
+    "answer": "[Cached response #163]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I stop being addicted to porn?",
+    "lookup": "How can I stop watching porn?",
+    "answer": "[Cached response #164]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why did India opt for Rafale aircrafts over other fighter jets?",
+    "lookup": "What is so special about Rafale fighter jets? Why is India keen on acquiring them?",
+    "answer": "[Cached response #165]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What if South Indians form their own separate country?",
+    "lookup": "What do South Indians feel about the idea of a separate South India?",
+    "answer": "[Cached response #166]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Can we time travel anyhow?",
+    "lookup": "How is time travel possible?",
+    "answer": "[Cached response #167]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "I have a drug test tomorrow and I smoked marijuana 2 weeks ago. How can I increase my chances of passing?",
+    "lookup": "If I smoked 2 weeks ago, how do I pass a drug test?",
+    "answer": "[Cached response #168]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Can you actually spy on someone else's WhatsApp account?",
+    "lookup": "How can I hack someone else's WhatsApp account from a different place?",
+    "answer": "[Cached response #169]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some lesser known TV shows/sitcoms which are really good?",
+    "lookup": "What is your favorite, lesser known TV show?",
+    "answer": "[Cached response #170]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why do the minions in Despicable Me love bananas?",
+    "lookup": "Why are the Minions crazy for bananas?",
+    "answer": "[Cached response #171]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the most overrated movie of 2016?",
+    "lookup": "Which are the most overrated movies in 2016?",
+    "answer": "[Cached response #172]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How are people earning billions from home by simple Uber app hack?",
+    "lookup": "How are my friends earning millions from home just by using Uber app?",
+    "answer": "[Cached response #173]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How much it cost for a hair transplant in India?",
+    "lookup": "How much does it cost to get hair transplant in India?",
+    "answer": "[Cached response #174]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I avoid human verification in 8 ball pool hack? Is it possible?",
+    "lookup": "How can we avoid human verification in 8 ball pool hack?",
+    "answer": "[Cached response #175]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "When something is conjured in the Harry Potter universe, is that item simply transported, or actually conjured?",
+    "lookup": "When someone vanishes something in the Potter universe, where does it go?",
+    "answer": "[Cached response #176]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I become a journalist?",
+    "lookup": "What is the best way to become a journalist?",
+    "answer": "[Cached response #177]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which is the best engineering field that I can choose?",
+    "lookup": "What is the best engineering field in the world?",
+    "answer": "[Cached response #178]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are ways to increase organic traffic on Facebook Page?",
+    "lookup": "What are the ways to increase organic traffic on Facebook page and on website?",
+    "answer": "[Cached response #179]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Can I hack WhatsApp of someone?",
+    "lookup": "Can I hack WhatsApp?",
+    "answer": "[Cached response #180]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I change the date of birth on my birth certificate?",
+    "lookup": "Can I change my DOB in birth certificate?",
+    "answer": "[Cached response #181]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some examples of traditional economies?",
+    "lookup": "What is a traditional economy? What are some examples?",
+    "answer": "[Cached response #182]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the Delta Force used for?",
+    "lookup": "What is the Delta Force main focus?",
+    "answer": "[Cached response #183]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I learn programming from scratch?",
+    "lookup": "I want to learn Coding/Programming from scratch. How to start?",
+    "answer": "[Cached response #184]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can changing 500 and 1000 rupee notes end the black money in India?",
+    "lookup": "How exactly does banning Rs 500 and Rs 1000 notes curb the problem of black money?",
+    "answer": "[Cached response #185]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the medical tests I have to undergo before my marriage?",
+    "lookup": "What medical tests a couple should undergo before getting married?",
+    "answer": "[Cached response #186]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I get to know my crush better?",
+    "lookup": "How do I get to know my crush?",
+    "answer": "[Cached response #187]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why is Generation X so frustrated?",
+    "lookup": "What is so great about Generation X?",
+    "answer": "[Cached response #188]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is laminating floor?",
+    "lookup": "How is laminate flooring installed?",
+    "answer": "[Cached response #189]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "What are the most creative poems you ever read?",
+    "lookup": "What is the most romantic poem ever written?",
+    "answer": "[Cached response #190]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Is it sad that there are so many non-vegetarians in India?",
+    "lookup": "Should non-vegetarian food be completely banned in India? Why?",
+    "answer": "[Cached response #191]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "What can trump Facebook?",
+    "lookup": "What is Trump?",
+    "answer": "[Cached response #192]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is Rhett and Link's net worth?",
+    "lookup": "What is Tori Kelly's net worth?",
+    "answer": "[Cached response #193]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "In which battles in Middle-earth did elves and dwarves fight together on the same side?",
+    "lookup": "Did dwarves have magic like the elves?",
+    "answer": "[Cached response #194]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do you determine the Lewis structure for hydrogen cyanide?",
+    "lookup": "How is the Lewis structure for cyanide determined?",
+    "answer": "[Cached response #195]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Did Jinnah ever regret his demand for Pakistan that caused partition?",
+    "lookup": "Why did Pakistan ignored Jinnah's views and became Islamic Republic after partition?",
+    "answer": "[Cached response #196]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Who introduced real cost?",
+    "lookup": "What is the real running cost of a super car?",
+    "answer": "[Cached response #197]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Is it too late to do something with my life?",
+    "lookup": "I am in my late 20s and feel I have wasted a lot of time. Is it too late for me to achieve something worthwhile?",
+    "answer": "[Cached response #198]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What should I do about this little girl having a crush on me?",
+    "lookup": "What should I do about my crush on this guy?",
+    "answer": "[Cached response #199]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How can this word be used in a sentence?",
+    "lookup": "How can the word 'aquamarine' be used in a sentence?",
+    "answer": "[Cached response #200]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the working principle of a scroll pump?",
+    "lookup": "How does a cam pump work?",
+    "answer": "[Cached response #201]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "Who do you think is the best politician in history?",
+    "lookup": "Who is the best politician?",
+    "answer": "[Cached response #202]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How is hard engineering sustainable?",
+    "lookup": "Why is hard engineering not sustainable?",
+    "answer": "[Cached response #203]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is software consulting?",
+    "lookup": "What is Software consultant designation?",
+    "answer": "[Cached response #204]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Why was Christopher Columbus considered a villain?",
+    "lookup": "What reasons would there be for Christopher Columbus be considered a villain?",
+    "answer": "[Cached response #205]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What's the best way to travel the world?",
+    "lookup": "How can I travel around the world?",
+    "answer": "[Cached response #206]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Can I.Q. be improved?",
+    "lookup": "Can I.Q. be enhanced?",
+    "answer": "[Cached response #207]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is it like to go to prison?",
+    "lookup": "What does it feel like to go to prison?",
+    "answer": "[Cached response #208]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is Pakistan's equivalent university to IITs?",
+    "lookup": "Which is the best University in Pakistan? Where do they stand compared to IITs?",
+    "answer": "[Cached response #209]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why Supreme Court directed all cinema halls to play the National Anthem before the start of a film?",
+    "lookup": "What's your stand on the recent Supreme Court's order about national anthem in cinema halls?",
+    "answer": "[Cached response #210]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can you improve your communication skill?",
+    "lookup": "How do I improve my communication skills.?",
+    "answer": "[Cached response #211]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Are GMO foods safe?",
+    "lookup": "Are GMO foods actually bad for you?",
+    "answer": "[Cached response #212]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some mind-blowing outdoor gadgets tools that most people don't know about?",
+    "lookup": "What are some mind-blowing outdoor adventure tools that most people don't know about?",
+    "answer": "[Cached response #213]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which are the best automation testing tools?",
+    "lookup": "What are the best test automation tools?",
+    "answer": "[Cached response #214]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What would your advice be to your 25 year old self?",
+    "lookup": "What lesson(s) would you share with your 25 year old self if you could travel back in time?",
+    "answer": "[Cached response #215]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What's the relationship between body's pH value and cancer?",
+    "lookup": "What is the relationship of a human body's Ph Power Hardness and getting Cancer?",
+    "answer": "[Cached response #216]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I setup a minecraft server?",
+    "lookup": "How do I make a multiplayer Minecraft server?",
+    "answer": "[Cached response #217]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How shall I become a software developer in India?",
+    "lookup": "How do I become software developer in india?",
+    "answer": "[Cached response #218]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Who are some celebrities that have a Quora account?",
+    "lookup": "Which celebrities are there on Quora?",
+    "answer": "[Cached response #219]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which is the best car in world?",
+    "lookup": "What are the best cars in the world?",
+    "answer": "[Cached response #220]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is an interesting fact that you know and I don't?",
+    "lookup": "What is the most interesting fact that most people don't know about?",
+    "answer": "[Cached response #221]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Your favorite Star Wars film?",
+    "lookup": "My favorite movie from Star Wars was Rogue One, what was yours?",
+    "answer": "[Cached response #222]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I run a 3 phase motor in a two way supply?",
+    "lookup": "How can I used 3 phase motor in a 2 way supply?",
+    "answer": "[Cached response #223]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I become a good web designer?",
+    "lookup": "What are the best ways to be a better web designer?",
+    "answer": "[Cached response #224]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "In what year will we see successful in-space refueling or repair of a large satellite by a small satellite?",
+    "lookup": "In what year will we see successful in-space refueling or repair of a small satellite?",
+    "answer": "[Cached response #225]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best teacher student story you know?",
+    "lookup": "What is the best teacher and student relationship story you know?",
+    "answer": "[Cached response #226]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do Indian military and Paramilitary forces keep killing peaceful civilians in Jammu Kashmir?",
+    "lookup": "Why is Indian Army killing innocent civilians in Kashmir?",
+    "answer": "[Cached response #227]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is a money tree at a party?",
+    "lookup": "What is a money tree?",
+    "answer": "[Cached response #228]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Will I get a dental Seat with the score of 400 in neet 2?",
+    "lookup": "Can I get a dental seat if I got 405 for NEET 2016?",
+    "answer": "[Cached response #229]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the fastest tank in the world?",
+    "lookup": "What's the fastest tank ever to be made?",
+    "answer": "[Cached response #230]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the chances that the electoral college will decide to vote against Trump?",
+    "lookup": "What is the likelihood that the Electoral College can vote out Donald Trump and vote in Hillary Clinton?",
+    "answer": "[Cached response #231]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some ways to lose 40 pounds in two weeks?",
+    "lookup": "What can you do to lose 40 pounds in 2 weeks?",
+    "answer": "[Cached response #232]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I become an introvert?",
+    "lookup": "How do I convert to an introvert?",
+    "answer": "[Cached response #233]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which is the best mutual funds to invest in India?",
+    "lookup": "What is the best mutual fund to invest for a long term in India?",
+    "answer": "[Cached response #234]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best fat burning pills?",
+    "lookup": "Are fat burning pills helpful along with exercise? What are the best fat burning pills?",
+    "answer": "[Cached response #235]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I make an extra 1000 dollars a month?",
+    "lookup": "What can I do to make an extra 1000 dollars?",
+    "answer": "[Cached response #236]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do know that you are in love?",
+    "lookup": "How do you know that you are no more in love?",
+    "answer": "[Cached response #237]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What do foreigners find most annoying about Indians?",
+    "lookup": "What is the most annoying thing about India?",
+    "answer": "[Cached response #238]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do I become a trending topic on Twitter?",
+    "lookup": "How does Twitter select trending topics?",
+    "answer": "[Cached response #239]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How worried do you become when someone seems smarter than yourself?",
+    "lookup": "How do you know if someone is smarter than you?",
+    "answer": "[Cached response #240]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the tamil name for quinoa?",
+    "lookup": "What are some nice Tamil names to name my son/daughter?",
+    "answer": "[Cached response #241]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Does snow increase the height of Mount Everest?",
+    "lookup": "Who was the first Indian to climb Mount Everest?",
+    "answer": "[Cached response #242]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Why would anyone want a Red Panda as a pet?",
+    "lookup": "Can you keep a Red Panda as a pet?",
+    "answer": "[Cached response #243]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What proves that history repeats itself?",
+    "lookup": "Can history repeat itself?",
+    "answer": "[Cached response #244]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the difference between collision domain and broadcast domain?",
+    "lookup": "What is a broadcast domain?",
+    "answer": "[Cached response #245]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the best thing to do when you get bored?",
+    "lookup": "Boredom: What can I do when I'm bored in my house?",
+    "answer": "[Cached response #246]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do I edit Quora answers?",
+    "lookup": "Can Quora users edit other people's answers?",
+    "answer": "[Cached response #247]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the tenure of chief minister?",
+    "lookup": "What is the salary of chief minister?",
+    "answer": "[Cached response #248]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are good metaphors in English?",
+    "lookup": "What are the best metaphors?",
+    "answer": "[Cached response #249]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Is there something like a mid-career crisis?",
+    "lookup": "Mid-Career Crisis - Should I do an MBA?",
+    "answer": "[Cached response #250]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is grit?",
+    "lookup": "What does grit mean?",
+    "answer": "[Cached response #251]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How many valence electrons does sodium have?",
+    "lookup": "How many valence electrons does oxygen have?",
+    "answer": "[Cached response #252]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are shocking experiences of bullying?",
+    "lookup": "What is your worst experience with bullying?",
+    "answer": "[Cached response #253]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "How good is the MacBook Pro for gaming?",
+    "lookup": "Is MacBook Pro 8 GB 2015 good for gaming?",
+    "answer": "[Cached response #254]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why is India failing so miserably in the 2016 Rio Olympics?",
+    "lookup": "What are the reason of poor performance of India in Rio 2016 while expectations were too high?",
+    "answer": "[Cached response #255]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do you think demonetisation will affect Indian economy?",
+    "lookup": "How will demonetization affect India & Indian economy?",
+    "answer": "[Cached response #256]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I deal with self incompetence?",
+    "lookup": "How can you deal with self-incompetence?",
+    "answer": "[Cached response #257]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I transfer WhatsApp messages from Android to iOS?",
+    "lookup": "How do I transfer WhatsApp chat messages from my Android phone to an iPhone?",
+    "answer": "[Cached response #258]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is World War 3 coming?",
+    "lookup": "How close are we to World War Three, and how bad would it be?",
+    "answer": "[Cached response #259]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is there a way to get a domain for free?",
+    "lookup": "How can I get a domain for free?",
+    "answer": "[Cached response #260]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best experience you had with your besties?",
+    "lookup": "What is the best experience you ever had with your friends?",
+    "answer": "[Cached response #261]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I recover deleted browser history?",
+    "lookup": "How can I recover my deleted Internet history?",
+    "answer": "[Cached response #262]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Who can win the US presidential elections?",
+    "lookup": "Who do you think wins this US presidential election?",
+    "answer": "[Cached response #263]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "I have scored 650 marks in MAT exam what will be my percentile?",
+    "lookup": "If I got 650 marks in MAT exam what will be my percentile?",
+    "answer": "[Cached response #264]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I make rs 10000 per month with 1 lakh rupees in India?",
+    "lookup": "Is it easy to earn 10000 per month with 1lakh rupees?",
+    "answer": "[Cached response #265]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the good books for kids?",
+    "lookup": "What is the best book for kids?",
+    "answer": "[Cached response #266]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What makes you a human?",
+    "lookup": "What makes you truly human?",
+    "answer": "[Cached response #267]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best software company in Chennai?",
+    "lookup": "What are the good software companies in Chennai?",
+    "answer": "[Cached response #268]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some good songs to make a texting lyric prank?",
+    "lookup": "What are some good lyric prank songs to send your best friends?",
+    "answer": "[Cached response #269]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Do you think it's right to bring up your child into this messed up world?",
+    "lookup": "Am I justified in being afraid to bring a child into the world?",
+    "answer": "[Cached response #270]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I escape boredom?",
+    "lookup": "What are the best ways to overcome boredom?",
+    "answer": "[Cached response #271]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which is the best way to prepare for SSC CGL at home without coaching?",
+    "lookup": "How do I crack the SSC CGL exam without coaching?",
+    "answer": "[Cached response #272]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I speed up my laptop?",
+    "lookup": "How do I speed up my computer?",
+    "answer": "[Cached response #273]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the worst thing you've ever done to another human being?",
+    "lookup": "What's the worst thing you've ever done to another human being?",
+    "answer": "[Cached response #274]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the best places to visit in Wayanad, Kerala?",
+    "lookup": "What are the best places to visit on a 3-day trip in and around Kerala?",
+    "answer": "[Cached response #275]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I see who viewed my instagram videos?",
+    "lookup": "How can I see who viewed my instagram?",
+    "answer": "[Cached response #276]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How did you expand your vocabulary?",
+    "lookup": "How can I increase my vocabulary?",
+    "answer": "[Cached response #277]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the future of mobile apps? Is the Market saturated?",
+    "lookup": "What are the future of mobile applications?",
+    "answer": "[Cached response #278]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I lose 25 kg by exercise?",
+    "lookup": "How do i lose weight?",
+    "answer": "[Cached response #279]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why do people say God bless you?",
+    "lookup": "Why do they say God bless you when you sneeze?",
+    "answer": "[Cached response #280]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the technology of double camera in iPhone 7?",
+    "lookup": "How does the double camera on the iPhone 7+ work?",
+    "answer": "[Cached response #281]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "I always feel sleepy in my lectures. What can I do?",
+    "lookup": "I always feel sleepy and lost in my own world. What should I do to avoid this?",
+    "answer": "[Cached response #282]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "I have an incurable disease. My wife left me. She hung in for a while. Why?",
+    "lookup": "I have a incurable disease. My wife left me because she can have more fun without me. She hung in for a while. Why?",
+    "answer": "[Cached response #283]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the boundaries of the FBI's geographic jurisdiction?",
+    "lookup": "What are the boundaries of the FBI's geography jurisdiction?",
+    "answer": "[Cached response #284]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I prepare myself to world's top university?",
+    "lookup": "How can I get into a top university?",
+    "answer": "[Cached response #285]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is it worth buying Kindle in India?",
+    "lookup": "Is a Amazon Kindle really worth the money or Can I just use my Nexus tablet?",
+    "answer": "[Cached response #286]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I learn English in a short time?",
+    "lookup": "How can I learn english quickly and well?",
+    "answer": "[Cached response #287]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which programming languages will be most valuable in the IoT?",
+    "lookup": "Which programming languages are used at Internet of things?",
+    "answer": "[Cached response #288]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "Under which provision we go to supreme court for parliamentary privileges?",
+    "lookup": "Does federal reserve bank come under jurisdiction of supreme court?",
+    "answer": "[Cached response #289]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "Which is the best phone to buy under 2500 INR?",
+    "lookup": "Which are the best mobile to buy under 8K INR?",
+    "answer": "[Cached response #290]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Should Google buy Twitter?",
+    "lookup": "Why is Google not buying Twitter?",
+    "answer": "[Cached response #291]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How is social class determined in the US?",
+    "lookup": "How is social class determined in Japan?",
+    "answer": "[Cached response #292]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are 5 examples of simple sentences?",
+    "lookup": "What are some examples of simple sentences with a compound predicate?",
+    "answer": "[Cached response #293]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How can I control my anger when my smart phone performs very slow?",
+    "lookup": "What could be causing the internet on my smart phone to be going slow?",
+    "answer": "[Cached response #294]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "Is very good hand writing very important for UPSC mains examination?",
+    "lookup": "Is it allowed to write with an ink pen in the UPSC main examination?",
+    "answer": "[Cached response #295]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "What makes short, skinny guys attractive to women?",
+    "lookup": "Do guys approach girls only because of their looks?",
+    "answer": "[Cached response #296]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "How can you calculate a derivative of volume of a cylinder?",
+    "lookup": "How does calculating the volume of a cylinder compare to that of a sphere?",
+    "answer": "[Cached response #297]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are some adaptations of plants in the Indian Ocean?",
+    "lookup": "What is the reason for the separation of the waters of the Indian and Atlantic Oceans?",
+    "answer": "[Cached response #298]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do you delete a hidden partition on a flash drive using Mac OS X?",
+    "lookup": "What's the best IRC client for Mac OS X?",
+    "answer": "[Cached response #299]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "Why would anyone want to visit Saturn?",
+    "lookup": "Why does Saturn look so fake?",
+    "answer": "[Cached response #300]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "What makes the venom from a wasp sting hurt?",
+    "lookup": "How do you stop the itch from a wasp sting?",
+    "answer": "[Cached response #301]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Is it worth pursuing a graduate degree in medicine?",
+    "lookup": "Is it worth pursuing a graduate degree in journalism?",
+    "answer": "[Cached response #302]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do you quit the Disney College Program?",
+    "lookup": "Why should I do join the Disney College Program?",
+    "answer": "[Cached response #303]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What do other people think of Keralites?",
+    "lookup": "What does the rest of India think about the Keralites?",
+    "answer": "[Cached response #304]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do I sell domains?",
+    "lookup": "What are some good, reputable resources for selling domains?",
+    "answer": "[Cached response #305]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "Why does Quora show the questions that I have already upvoted in my feed?",
+    "lookup": "Why does my Quora home feed sometimes show me answers I already upvoted?",
+    "answer": "[Cached response #306]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Can white hair turn into black hair?",
+    "lookup": "Can white hair turn into black?",
+    "answer": "[Cached response #307]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I get rid of bad habits?",
+    "lookup": "How do I get rid of bad habits?",
+    "answer": "[Cached response #308]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some nice places to hangout in Pune?",
+    "lookup": "Which is the best place to hangout with friends in pune?",
+    "answer": "[Cached response #309]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do you make money with Quora?",
+    "lookup": "How can you earn a living on Quora?",
+    "answer": "[Cached response #310]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is Hillary Clinton going to go to jail?",
+    "lookup": "Why could Hillary Clinton go to jail?",
+    "answer": "[Cached response #311]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Will Rs. 2000 currency note really come with A GPS chip?",
+    "lookup": "Is is true or just a rumor that RBI Rs 2000 note will carry a GPS tacking device?",
+    "answer": "[Cached response #312]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How does a long distance relationship work?",
+    "lookup": "Do long distance relationships work?",
+    "answer": "[Cached response #313]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the pros and cons of banning currency notes of 500 and 1000 in India?",
+    "lookup": "What is the main reason for discontinuing 500 and 1000 Rupees Note in India?",
+    "answer": "[Cached response #314]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How to run WhatsApp on PC without BlueStacks",
+    "lookup": "What are the ways to use Whatsapp on pc other than bluestacks?",
+    "answer": "[Cached response #315]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Who is the best-looking woman from your country?",
+    "lookup": "Who is the most beautiful woman of your country?",
+    "answer": "[Cached response #316]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which university is best in Germany for doing MS in Computer Science?",
+    "lookup": "What are some good universities in Germany for masters in computer science?",
+    "answer": "[Cached response #317]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best age for having first sex?",
+    "lookup": "What is a good age to have sex?",
+    "answer": "[Cached response #318]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which part of the human body would you redesign?",
+    "lookup": "What parts of the human body are poorly designed?",
+    "answer": "[Cached response #319]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I lose weight fast?",
+    "lookup": "What are the best ways to lose a lot of weight as quickly as possible?",
+    "answer": "[Cached response #15]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best site to download films?",
+    "lookup": "Which are best sites to download movies?",
+    "answer": "[Cached response #320]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I get FM radio on my iPhone?",
+    "lookup": "How can I receive FM radio broadcasts on my iPhone 6s Plus?",
+    "answer": "[Cached response #321]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is acupuncture and how does it work?",
+    "lookup": "What is acupuncture? How does it work?",
+    "answer": "[Cached response #322]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is Donald Trump going to be the next US President?",
+    "lookup": "What are the chances that Donald Trump will be the next US president?",
+    "answer": "[Cached response #323]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do satellite communications work?",
+    "lookup": "How do satellites work?",
+    "answer": "[Cached response #324]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Does petroleum jelly help eyelashes grow?",
+    "lookup": "Does petroleum jelly (Vaseline) help eyelashes grow?",
+    "answer": "[Cached response #325]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can you improve your communication skills?",
+    "lookup": "What should I do improve my communication skill?",
+    "answer": "[Cached response #326]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I reset my gmail password when recovery email is not highlighted?",
+    "lookup": "How do I reset my Gmail password when I forgotten it?",
+    "answer": "[Cached response #327]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Who joined the Korean war?",
+    "lookup": "Why did all the countries join the Korean war?",
+    "answer": "[Cached response #328]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some of the best novels that should be read by everyone?",
+    "lookup": "What are some of the best novels you have read?",
+    "answer": "[Cached response #329]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How was education during the Japanese occupation in Singapore like?",
+    "lookup": "How was education in Singapore during the Japanese occupation?",
+    "answer": "[Cached response #330]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the diet of the weasel?",
+    "lookup": "What are the eating habits of a weasel?",
+    "answer": "[Cached response #331]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What can you say about Filipino people?",
+    "lookup": "What is your honest opinion about the Philippines and Filipino people?",
+    "answer": "[Cached response #332]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why are mobile phones getting uselessly fast?",
+    "lookup": "Why are mobile phones getting uselessly fast? When the real thing is how long its battery can last?",
+    "answer": "[Cached response #333]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What might be the business plan in launching reliance jio?",
+    "lookup": "What is the revenue model of Reliance Jio?",
+    "answer": "[Cached response #334]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I tell when someone unfollows me on Instagram?",
+    "lookup": "How can I know who unfollowed me on Instagram?",
+    "answer": "[Cached response #335]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What will happen to the superpower status of the USA if Donald Trump wins?",
+    "lookup": "What's going to happen to America if Donald Trump wins?",
+    "answer": "[Cached response #336]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why most of the people in India don't pay income tax?",
+    "lookup": "How many people pay income tax in India?",
+    "answer": "[Cached response #337]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why should women support Donald Trump?",
+    "lookup": "Why are there still some women who are voting for Donald Trump?",
+    "answer": "[Cached response #338]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What's the best entry book for topology?",
+    "lookup": "What is a good beginners book on topology?",
+    "answer": "[Cached response #339]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Can I install Mac OS on my Dell laptop?",
+    "lookup": "How do I install Mac OS on a Dell laptop?",
+    "answer": "[Cached response #340]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Does the Indian education system need a reformation?",
+    "lookup": "Should the Indian education system be changed?",
+    "answer": "[Cached response #341]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What has life taught you?",
+    "lookup": "What has life taught you recently?",
+    "answer": "[Cached response #342]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Will GST change Indian economy?",
+    "lookup": "How can the GST bill boost the Indian economy?",
+    "answer": "[Cached response #343]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What's your favorite song right now?",
+    "lookup": "What's your current favorite song?",
+    "answer": "[Cached response #344]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I get the best deals for a cruise?",
+    "lookup": "How can I get the absolute best deal on a cruise?",
+    "answer": "[Cached response #345]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best strategy to crack JEE Advance in first attempt?",
+    "lookup": "What is the best strategy to crack the main and advanced JEE?",
+    "answer": "[Cached response #346]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What was there before the Universe?",
+    "lookup": "What was there before universe was born?",
+    "answer": "[Cached response #347]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I boost my intelligence to think on my feet?",
+    "lookup": "How can I learn to think faster on my feet?",
+    "answer": "[Cached response #348]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why do people often ask questions in Quora while they can Google it?",
+    "lookup": "Why do some people ask simple questions in Quora when there are resources on internet?",
+    "answer": "[Cached response #349]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best place to stay in Mumbai?",
+    "lookup": "Where is best place to live in Mumbai?",
+    "answer": "[Cached response #350]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which kind of phone was your first cell phone?",
+    "lookup": "What was your first mobile phone?",
+    "answer": "[Cached response #351]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is Nikola Tesla's IQ?",
+    "lookup": "Did Nikola Tesla have children?",
+    "answer": "[Cached response #352]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are the secrets NASA is hiding from the world?",
+    "lookup": "Is there any secret hidden from people of the world by the government?",
+    "answer": "[Cached response #353]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Why do we float on water?",
+    "lookup": "Why does a boat float on water?",
+    "answer": "[Cached response #354]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How does red dwarf work?",
+    "lookup": "How does a red dwarf die?",
+    "answer": "[Cached response #355]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Who is the most likeable Game of Thrones character?",
+    "lookup": "Who is the most arrogant character in Game of Thrones?",
+    "answer": "[Cached response #356]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do I change my Instagram username?",
+    "lookup": "If I changed my Instagram username, can Instagram developers find me by my old username?",
+    "answer": "[Cached response #357]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do I tip an Uber driver without cash?",
+    "lookup": "Why does Uber not offer a way to book a round trip?",
+    "answer": "[Cached response #358]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "Which is the best site to download TV series?",
+    "lookup": "Which is the best site to download TV Series other than torrents?",
+    "answer": "[Cached response #359]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are the shows to watch after Breaking Bad?",
+    "lookup": "What is the best series to watch after Breaking Bad?",
+    "answer": "[Cached response #360]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the future scope of mechanical engineering?",
+    "lookup": "What are the scopes of mechanical engineering in India?",
+    "answer": "[Cached response #361]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "When do people usually get married?",
+    "lookup": "Why do people get married?",
+    "answer": "[Cached response #362]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Why are people incompetent?",
+    "lookup": "Why are we governed by so many incompetent people?",
+    "answer": "[Cached response #363]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How can I get over my addiction?",
+    "lookup": "How do I get over music addiction while preparing for software job?",
+    "answer": "[Cached response #364]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How can I speak English smoothly?",
+    "lookup": "How can I speak English smoothly without any coaching?",
+    "answer": "[Cached response #365]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Is nuclear engineering a good field?",
+    "lookup": "Is procurement a good field for an EXTC engineer?",
+    "answer": "[Cached response #366]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Why is Pandora not available in India?",
+    "lookup": "When will Pandora be available in India?",
+    "answer": "[Cached response #367]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do I calculate aggregate percentage in engineering?",
+    "lookup": "How do I calculate the aggregate percentage with backlogs?",
+    "answer": "[Cached response #368]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "No product market fit: change product or market first?",
+    "lookup": "What is product market fit?",
+    "answer": "[Cached response #369]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How can we improve India's current education system?",
+    "lookup": "How can India's education system be fixed?",
+    "answer": "[Cached response #370]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How could I improve my English?",
+    "lookup": "How can I improve my communication skills in English?",
+    "answer": "[Cached response #371]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What should I do to last longer in bed?",
+    "lookup": "How do I last longer in sex?",
+    "answer": "[Cached response #372]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I make money off amazon business?",
+    "lookup": "How do I start making money off of amazon?",
+    "answer": "[Cached response #373]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are some best quotes you have heard?",
+    "lookup": "What is the best quote you have heard?",
+    "answer": "[Cached response #374]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which is the best wearable technology so far?",
+    "lookup": "What are the best Wearable technology?",
+    "answer": "[Cached response #375]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Do Muslims think non-Muslims are going to hell?",
+    "lookup": "According to islam, are all non-Muslims going to hell?",
+    "answer": "[Cached response #376]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is better, Coca Cola or Pepsi?",
+    "lookup": "Do you prefer Coca Cola or Pepsi Cola, and why?",
+    "answer": "[Cached response #377]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are your views about the decision to stop flow of 1000 and 500 rupee notes?",
+    "lookup": "What do you think about the Indian Government demonetising 500 and 1000 rupees note?",
+    "answer": "[Cached response #378]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Could England leave the United Kingdom?",
+    "lookup": "What would happen if England left the United Kingdom?",
+    "answer": "[Cached response #379]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is it like to work at Factual?",
+    "lookup": "What is it like to work at Factual in 2016?",
+    "answer": "[Cached response #380]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why do people insist on driving slowly in the passing lane?",
+    "lookup": "Why do some people drive slowly in the passing lane?",
+    "answer": "[Cached response #381]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why isn't the unexamined life worth living?",
+    "lookup": "What is the meaning of Socrates's statement that the unexamined life is not worth living?",
+    "answer": "[Cached response #382]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why do people use Quora instead of Google to find answers?",
+    "lookup": "Why use Quora when Google answers almost everything?",
+    "answer": "[Cached response #383]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are we doing here on Earth?",
+    "lookup": "Why are we here on earth? What's the purpose?",
+    "answer": "[Cached response #384]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I learn communication skills?",
+    "lookup": "How can you improve your communication skills?",
+    "answer": "[Cached response #385]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I recover data from an external hard disk?",
+    "lookup": "How can I recover data from an external hard disk?",
+    "answer": "[Cached response #386]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which countries have nuclear weapons?",
+    "lookup": "How many countries have nuclear weapons?",
+    "answer": "[Cached response #387]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is Hormone Replacement Therapy safe?",
+    "lookup": "How long is it safe to be on hormone replacement therapy?",
+    "answer": "[Cached response #388]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What should I do for women to notice me?",
+    "lookup": "How do I get a guy at school to notice me?",
+    "answer": "[Cached response #389]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do I raise a fund for a startup IT company?",
+    "lookup": "How can I raise funding for my startup?",
+    "answer": "[Cached response #390]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do I become a boring person?",
+    "lookup": "How can a person become really boring to be with?",
+    "answer": "[Cached response #391]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do I make friends in office?",
+    "lookup": "How do we make friends?",
+    "answer": "[Cached response #392]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What can you do best in two minutes?",
+    "lookup": "What are the best two minute poems?",
+    "answer": "[Cached response #393]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What can I substitute for vegetable oil?",
+    "lookup": "Can you substitute canola oil for vegetable oil?",
+    "answer": "[Cached response #394]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are web landing pages?",
+    "lookup": "What is a landing page?",
+    "answer": "[Cached response #395]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the biggest achievement in life?",
+    "lookup": "What is the biggest achievement of your life?",
+    "answer": "[Cached response #396]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Why are tyres made only in black colour?",
+    "lookup": "Why are the tyres of the car black? Why can't it be any other?",
+    "answer": "[Cached response #397]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the easiest way to earn bitcoins?",
+    "lookup": "How do you earn bitcoins?",
+    "answer": "[Cached response #398]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How common are green eyes?",
+    "lookup": "How do green and hazel eyes differ?",
+    "answer": "[Cached response #399]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How can I improve my english language skills?",
+    "lookup": "How can I improve my English Language?",
+    "answer": "[Cached response #400]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "In what way do you think the reservation system can be diminished in India?",
+    "lookup": "How can this reservation system can be overthrown from India?",
+    "answer": "[Cached response #401]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What should the inside of an eggplant look like?",
+    "lookup": "What should an eggplant look like on the inside?",
+    "answer": "[Cached response #402]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is it possible to remove everything mentioning Hillary Clinton or Donald Trump from my Quora feed?",
+    "lookup": "How do I filter out questions about Bernie Sanders, Donald Trump, and Hillary Clinton from my feed?",
+    "answer": "[Cached response #403]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Were there any humans before Adam and Eve?",
+    "lookup": "Could there have been any humans before Adam?",
+    "answer": "[Cached response #404]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Is it better to have loved and lost than to have never loved at all?",
+    "lookup": "Do you really think it's better to have loved and lost than to never have loved at all?",
+    "answer": "[Cached response #405]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which is the best course for digital marketing?",
+    "lookup": "What are the best digital marketing courses for marketing managers?",
+    "answer": "[Cached response #406]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I approach a beautiful stranger girl?",
+    "lookup": "How do I approach a stranger beautiful girl?",
+    "answer": "[Cached response #407]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the actual height of bollywood stars?",
+    "lookup": "What is actual height of bollywood stars?",
+    "answer": "[Cached response #408]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the benefits of getting married?",
+    "lookup": "What are the benefits of getting married in this life time?",
+    "answer": "[Cached response #409]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I really make money online?",
+    "lookup": "What is an easy way make money online?",
+    "answer": "[Cached response #410]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Are there comprehensive tutorials to learn to use JetBrains IDEs?",
+    "lookup": "How do I learn to use JetBrains IDEs to their full advantage?",
+    "answer": "[Cached response #411]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Which foods help gain weight?",
+    "lookup": "What is the best diet to gain weight?",
+    "answer": "[Cached response #412]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the easy way to make money online?",
+    "lookup": "What should I do to make money online in India?",
+    "answer": "[Cached response #413]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why is salt water taffy candy unknown in Japan?",
+    "lookup": "Why is Saltwater Taffy candy imported in Mexico?",
+    "answer": "[Cached response #414]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best option for a mechanical engineer after bachelors?",
+    "lookup": "What is the best option after btech in mechanical engineering?",
+    "answer": "[Cached response #415]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What can I do after my MBBS?",
+    "lookup": "What do i do after my MBBS?",
+    "answer": "[Cached response #416]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What are the best places for honeymoon in winters?",
+    "lookup": "What is the best place for honeymoon in winter?",
+    "answer": "[Cached response #417]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How may I know whether my wife is cheating on me?",
+    "lookup": "How do you know if your partner is cheating on you?",
+    "answer": "[Cached response #418]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why do people see manaphy as annoying?",
+    "lookup": "Why do people find Manaphy annoying?",
+    "answer": "[Cached response #419]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Why do people in relationships cheat?",
+    "lookup": "Why do people cheat?",
+    "answer": "[Cached response #420]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can I improve my English speaking ability?",
+    "lookup": "What can I do to improve my English speaking?",
+    "answer": "[Cached response #421]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do l see who viewed my videos on Instagram?",
+    "lookup": "How can I see who viewed my video on Instagram?",
+    "answer": "[Cached response #422]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How does one prepare for the UGC net/jrf examination?",
+    "lookup": "How do I prepare for UGC NET (Hindi)?",
+    "answer": "[Cached response #423]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How does it feel to be a Christian in Pakistan?",
+    "lookup": "What is the situation like for Christians in Pakistan?",
+    "answer": "[Cached response #424]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Donald Trump has won the presidency. How does it affect US relations with India?",
+    "lookup": "What will be the impact of Donald Trump as president on India?",
+    "answer": "[Cached response #425]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What do you think of NCERT books?",
+    "lookup": "What is NCERT book?",
+    "answer": "[Cached response #426]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How do I reset my gmail password with no recovery info?",
+    "lookup": "I lost my password with my Gmail account. How do I reset it without recovery info?",
+    "answer": "[Cached response #427]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "How can the drive from Edmonton to Auckland be described?",
+    "lookup": "How can the drive from Edmonton to Auckland be described, and how do these cities compare to Toronto?",
+    "answer": "[Cached response #428]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "What is the best way to crack JEE?",
+    "lookup": "What is the best strategy to crack the main and advanced JEE?",
+    "answer": "[Cached response #429]",
+    "expect_hit": true,
+    "category": "match"
+  },
+  {
+    "cached": "Can I register my marriage to a foreign national in India?",
+    "lookup": "How can I register a marriage in India?",
+    "answer": "[Cached response #430]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are the meme formats?",
+    "lookup": "What is a meme?",
+    "answer": "[Cached response #431]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the difference between bread and toast?",
+    "lookup": "Why is it so difficult to toast bread while cutting it?",
+    "answer": "[Cached response #432]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is management theory?",
+    "lookup": "What are some IT Management theories?",
+    "answer": "[Cached response #433]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Can you vape in India?",
+    "lookup": "What is in vape?",
+    "answer": "[Cached response #434]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the oldest beer brewery in the world?",
+    "lookup": "What is the worst beer in the world?",
+    "answer": "[Cached response #435]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "Is there any AGE restriction in XLRI?",
+    "lookup": "Why is it so hard to score marks in XLRI?",
+    "answer": "[Cached response #436]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is a goal setting platform?",
+    "lookup": "What goals should I set?",
+    "answer": "[Cached response #437]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "Is it safe to touch stray dogs?",
+    "lookup": "Is it safe to play with stray dogs?",
+    "answer": "[Cached response #438]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What is the algorithm behind the game Onet?",
+    "lookup": "What is the best algorithm to word 3 match game?",
+    "answer": "[Cached response #439]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "What are the top three risks facing HSBC globally?",
+    "lookup": "Why are you interested in the role at HSBC?",
+    "answer": "[Cached response #440]",
+    "expect_hit": false,
+    "category": "neg"
+  },
+  {
+    "cached": "What does the law of attraction state in science?",
+    "lookup": "What is the law of attraction?",
+    "answer": "[Cached response #441]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  },
+  {
+    "cached": "How do Quora top writers spend their time on Quora?",
+    "lookup": "How much time do Top Writers spend on Quora?",
+    "answer": "[Cached response #442]",
+    "expect_hit": false,
+    "category": "hard-neg"
+  }
+]

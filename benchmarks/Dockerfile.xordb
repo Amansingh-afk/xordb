@@ -36,6 +36,7 @@ COPY embed/testdata/ embed/testdata/
 
 # Copy benchmarks module.
 COPY benchmarks/go.mod benchmarks/go.sum benchmarks/
+COPY benchmarks/data.json benchmarks/
 COPY benchmarks/dataset.go benchmarks/
 COPY benchmarks/xordb_bench_test.go benchmarks/
 

@@ -401,21 +401,22 @@ Encoding dominates (~460µs for n-gram, ~5ms for MiniLM). Linear scan adds
 
 ### Benchmark: xordb vs GPTCache
 
-75-query dataset with 4 categories: 40 true semantic matches, 15 true negatives
-(completely unrelated), 10 hard negatives (same topic, different question), and
-10 edge cases (abbreviations, indirect phrasing). Both Docker containers run on
-the same machine, same dataset, same rules.
+444-query dataset from [Quora Question Pairs](https://huggingface.co/datasets/SetFit/qqp)
+with 3 categories: 310 true semantic matches (paraphrases), 21 true negatives
+(completely unrelated), and 113 hard negatives (same topic, different question).
+Both Docker containers run on the same machine, same dataset, same rules. All
+systems use their default thresholds (xordb: 0.82).
 
 |  | **xordb (n-gram)** | **xordb (MiniLM)** | **GPTCache** |
 |---|---|---|---|
-| **Accuracy** | 64.0% (48/75) | **86.7% (65/75)** | 81.3% (61/75) |
-| **True positives** | 32 | **42** | 43 |
-| **True negatives** | 16 | **23** | 18 |
-| **False positives** | 9 | **2** | 7 |
-| **False negatives** | 18 | 8 | 7 |
-| **Avg latency** | **536µs** | 18.8ms | 285.4ms |
-| **Heap (reported)** | **1.21 MB** | 23.17 MB | 6.32 MB * |
-| **RSS (actual)** | **6.38 MB** | 192.64 MB † | 320.00 MB |
+| **Precision** | 83.7% (41/49) | **86.1% (199/231)** | 75.1% (307/409) |
+| **Recall** | 13.2% (41/310) | 64.2% (199/310) | **99.0% (307/310)** |
+| **F1 Score** | 22.8% | **73.6%** | 85.4% |
+| **FP Rate** | **6.0% (8/134)** | 23.9% (32/134) | 76.1% (102/134) |
+| **False neg** | 269 | 111 | **3** |
+| **Avg latency** | **1.1ms** | 19.1ms | 283.6ms |
+| **Heap (reported)** | **2.25 MB** | 22.67 MB | 6.36 MB * |
+| **RSS (actual)** | **10.80 MB** | 197.59 MB † | 323.06 MB |
 | **Dependencies** | **0** | onnxruntime + model | gptcache, faiss, onnxruntime, numpy |
 
 \* GPTCache heap measured via Python `tracemalloc`, which does not capture
@@ -429,27 +430,31 @@ Go heap (23 MB) is the projector's hyperplane matrix + tokenizer vocabulary.
 
 |  | **xordb (n-gram)** | **xordb (MiniLM)** | **GPTCache** |
 |---|---|---|---|
-| match (40) | 28/40 | **39/40** | **39/40** |
-| neg (15) | 13/15 | **15/15** | **15/15** |
-| hard-neg (10) | 3/10 | **8/10** | 3/10 |
-| edge (10) | 4/10 | 3/10 | **4/10** |
+| match (310) | 41/310 | 199/310 | **307/310** |
+| neg (21) | **21/21** | 20/21 | 14/21 |
+| hard-neg (113) | **105/113** | 82/113 | 18/113 |
 
 Key takeaways:
 
-- **MiniLM wins on accuracy** — 86.7% vs GPTCache's 81.3%, with only 2 false
-  positives vs GPTCache's 7. It correctly rejects "speed of light" vs "speed of
-  sound" while GPTCache doesn't.
-- **N-gram wins on speed** — 536µs/query with zero dependencies and 6 MB RSS.
-  If your paraphrases share words, this is all you need.
-- **GPTCache is 15x slower** than MiniLM per query (285ms vs 19ms), largely due
-  to Python overhead and FAISS index lookups.
-- **RSS tells the real memory story.** GPTCache reports 6.3 MB via Python
-  `tracemalloc`, but the actual process RSS is **320 MB** — FAISS, ONNX Runtime,
-  SQLite, and numpy all allocate outside Python's tracked heap. xordb n-gram uses
-  6.4 MB total. xordb MiniLM uses 193 MB (mostly the ONNX engine, fixed cost).
-- **All three struggle with edge cases** — abbreviations like "ML" → "machine
-  learning" and indirect phrasing like "why do apples fall" → "gravity" are hard
-  for any embedding model at this size.
+- **GPTCache has a 76% false positive rate.** It returns a cached answer for
+  76% of queries that *should not* match. For a semantic cache, this means
+  serving wrong answers most of the time on non-matching queries. High recall
+  (99%) is meaningless if precision is low.
+- **MiniLM has the best F1 balance** — 73.6% F1 with 86% precision. It
+  correctly rejects hard negatives (82/113) while still finding most true
+  matches (199/310). False positive rate of 24% is manageable and tunable
+  via threshold.
+- **N-gram wins on precision and speed** — 84% precision, only 6% FP rate,
+  1.1ms/query with zero dependencies and 11 MB RSS. Recall is low (13%)
+  because character n-grams can't match paraphrases with different words,
+  but when it says "hit", it's almost always right.
+- **GPTCache is 15x slower** than MiniLM per query (284ms vs 19ms), largely
+  due to Python overhead and FAISS index lookups.
+- **RSS tells the real memory story.** GPTCache reports 6 MB via Python
+  `tracemalloc`, but the actual process RSS is **323 MB** — FAISS, ONNX
+  Runtime, SQLite, and numpy all allocate outside Python's tracked heap.
+  xordb n-gram uses 11 MB total. xordb MiniLM uses 198 MB (mostly the ONNX
+  engine, fixed cost).
 
 Reproduce it yourself:
 

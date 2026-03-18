@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir \
     sentencepiece \
     protobuf
 
+COPY benchmarks/data.json .
 COPY benchmarks/dataset.py .
 COPY benchmarks/gptcache_bench.py .
 

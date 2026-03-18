@@ -76,11 +76,13 @@ def run_benchmark():
     tn = sum(1 for _, e, g, _ in results if not e and not g)
     fp = sum(1 for _, e, g, _ in results if not e and g)
     fn = sum(1 for _, e, g, _ in results if e and not g)
-    accuracy = (tp + tn) / n * 100
-    hits = tp + fp
+    precision = tp / (tp + fp) * 100 if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) * 100 if (tp + fn) > 0 else 0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+    fpr = fp / (fp + tn) * 100 if (fp + tn) > 0 else 0
 
     # Category breakdown.
-    categories = ["match", "neg", "hard-neg", "edge"]
+    categories = ["match", "neg", "hard-neg"]
     cat_total = {c: 0 for c in categories}
     cat_correct = {c: 0 for c in categories}
     for _, expect, got, cat in results:
@@ -99,14 +101,13 @@ def run_benchmark():
 
     row(
         "Dataset:",
-        f"{n} queries ({cat_total['match']} match, {cat_total['neg']} neg, {cat_total['hard-neg']} hard, {cat_total['edge']} edge)",
+        f"{n} queries ({cat_total['match']} match, {cat_total['neg']} neg, {cat_total['hard-neg']} hard-neg)",
     )
-    row("Accuracy:", f"{accuracy:.1f}% ({tp+tn}/{n} correct)")
-    row("True pos:", f"{tp}  (correct hits)")
-    row("True neg:", f"{tn}  (correct misses)")
-    row("False pos:", f"{fp}  (should miss, got hit)")
+    row("Precision:", f"{precision:.1f}% ({tp}/{tp+fp} hits correct)")
+    row("Recall:", f"{recall:.1f}% ({tp}/{tp+fn} matches found)")
+    row("F1 Score:", f"{f1:.1f}%")
+    row("FP Rate:", f"{fpr:.1f}% ({fp}/{fp+tn} wrong hits)")
     row("False neg:", f"{fn}  (should hit, got miss)")
-    row("Raw hits:", f"{hits} / {n}")
     row("Total time:", f"{elapsed*1000:.1f}ms")
     row("Avg latency:", f"{avg_latency_ms:.2f}ms / query")
     row("Heap (py):", f"{peak_mem / 1024 / 1024:.2f} MB")
@@ -117,17 +118,6 @@ def run_benchmark():
     for cat in categories:
         if cat_total[cat] > 0:
             row(f"{cat}:", f"{cat_correct[cat]}/{cat_total[cat]} correct")
-
-    print("╠══════════════════════════════════════════════════════════╣")
-    print("║  Per-query breakdown:                                    ║")
-    print("║  ✓ = correct, ✗ = wrong                                 ║")
-    print("╠══════════════════════════════════════════════════════════╣")
-
-    for lookup, expect, got, cat in results:
-        correct = "✓" if expect == got else "✗"
-        tag = "HIT " if got else "MISS"
-        display = lookup[:30] + "..." if len(lookup) > 33 else lookup
-        print(f"║ {correct} {tag}  {'['+cat+']':<10} {display:<33} ║")
 
     print("╚══════════════════════════════════════════════════════════╝")
     print()

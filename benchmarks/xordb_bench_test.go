@@ -20,7 +20,7 @@ import (
 
 func BenchmarkXorDB_NGram_Set(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		db := xordb.New(xordb.WithThreshold(0.65), xordb.WithCapacity(1000))
+		db := xordb.New(xordb.WithCapacity(1000))
 		for _, qp := range Dataset {
 			db.Set(qp.Cached, qp.Answer)
 		}
@@ -28,7 +28,7 @@ func BenchmarkXorDB_NGram_Set(b *testing.B) {
 }
 
 func BenchmarkXorDB_NGram_Lookup(b *testing.B) {
-	db := xordb.New(xordb.WithThreshold(0.65), xordb.WithCapacity(1000))
+	db := xordb.New(xordb.WithCapacity(1000))
 	for _, qp := range Dataset {
 		db.Set(qp.Cached, qp.Answer)
 	}
@@ -106,8 +106,19 @@ func printReport(t *testing.T, title string, deps string, threshold string, resu
 		}
 	}
 
-	accuracy := float64(tp+tn) / float64(n) * 100
-	hits := tp + fp
+	var precision, recall, f1, fpr float64
+	if tp+fp > 0 {
+		precision = float64(tp) / float64(tp+fp) * 100
+	}
+	if tp+fn > 0 {
+		recall = float64(tp) / float64(tp+fn) * 100
+	}
+	if precision+recall > 0 {
+		f1 = 2 * precision * recall / (precision + recall)
+	}
+	if fp+tn > 0 {
+		fpr = float64(fp) / float64(fp+tn) * 100
+	}
 
 	// Count by category.
 	catTotal := map[string]int{}
@@ -126,20 +137,18 @@ func printReport(t *testing.T, title string, deps string, threshold string, resu
 	fmt.Printf(
 		"║  Dataset:        %-39s ║\n",
 		fmt.Sprintf(
-			"%d queries (%d match, %d neg, %d hard, %d edge)",
+			"%d queries (%d match, %d neg, %d hard-neg)",
 			n,
 			catTotal["match"],
 			catTotal["neg"],
 			catTotal["hard-neg"],
-			catTotal["edge"],
 		),
 	)
-	fmt.Printf("║  Accuracy:       %-39s ║\n", fmt.Sprintf("%.1f%% (%d/%d correct)", accuracy, tp+tn, n))
-	fmt.Printf("║  True pos:       %-39s ║\n", fmt.Sprintf("%d  (correct hits)", tp))
-	fmt.Printf("║  True neg:       %-39s ║\n", fmt.Sprintf("%d  (correct misses)", tn))
-	fmt.Printf("║  False pos:      %-39s ║\n", fmt.Sprintf("%d  (should miss, got hit)", fp))
+	fmt.Printf("║  Precision:      %-39s ║\n", fmt.Sprintf("%.1f%% (%d/%d hits correct)", precision, tp, tp+fp))
+	fmt.Printf("║  Recall:         %-39s ║\n", fmt.Sprintf("%.1f%% (%d/%d matches found)", recall, tp, tp+fn))
+	fmt.Printf("║  F1 Score:       %-39s ║\n", fmt.Sprintf("%.1f%%", f1))
+	fmt.Printf("║  FP Rate:        %-39s ║\n", fmt.Sprintf("%.1f%% (%d/%d wrong hits)", fpr, fp, fp+tn))
 	fmt.Printf("║  False neg:      %-39s ║\n", fmt.Sprintf("%d  (should hit, got miss)", fn))
-	fmt.Printf("║  Raw hits:       %-39s ║\n", fmt.Sprintf("%d / %d", hits, n))
 	fmt.Printf("║  Total time:     %-39s ║\n", elapsed.Round(time.Microsecond))
 	fmt.Printf("║  Avg latency:    %-39s ║\n", fmt.Sprintf("%v / query", avgLatency.Round(time.Microsecond)))
 	fmt.Printf("║  Heap (Go):      %-39s ║\n", fmt.Sprintf("%.2f MB", float64(m.Alloc)/(1024*1024)))
@@ -149,31 +158,10 @@ func printReport(t *testing.T, title string, deps string, threshold string, resu
 	fmt.Println("╠══════════════════════════════════════════════════════════╣")
 
 	// Category breakdown.
-	for _, cat := range []string{"match", "neg", "hard-neg", "edge"} {
+	for _, cat := range []string{"match", "neg", "hard-neg"} {
 		if catTotal[cat] > 0 {
 			fmt.Printf("║  %-12s    %-39s ║\n", cat+":", fmt.Sprintf("%d/%d correct", catCorrect[cat], catTotal[cat]))
 		}
-	}
-
-	fmt.Println("╠══════════════════════════════════════════════════════════╣")
-	fmt.Println("║  Per-query breakdown:                                    ║")
-	fmt.Println("║  ✓ = correct, ✗ = wrong                                 ║")
-	fmt.Println("╠══════════════════════════════════════════════════════════╣")
-
-	for _, r := range results {
-		status := "✓"
-		if !r.correct() {
-			status = "✗"
-		}
-		tag := "MISS"
-		if r.gotHit {
-			tag = "HIT "
-		}
-		lookup := r.lookup
-		if len(lookup) > 33 {
-			lookup = lookup[:30] + "..."
-		}
-		fmt.Printf("║ %s %s  %.2f  %-7s %-28s ║\n", status, tag, r.sim, "["+r.category+"]", lookup)
 	}
 
 	fmt.Println("╚══════════════════════════════════════════════════════════╝")
@@ -184,7 +172,6 @@ func printReport(t *testing.T, title string, deps string, threshold string, resu
 
 func TestXorDB_NGram_Report(t *testing.T) {
 	db := xordb.New(
-		xordb.WithThreshold(0.65),
 		xordb.WithCapacity(1000),
 	)
 
@@ -200,7 +187,7 @@ func TestXorDB_NGram_Report(t *testing.T) {
 	}
 	elapsed := time.Since(start)
 
-	printReport(t, "xordb — N-gram HDC Encoder", "0", "0.65", results, elapsed)
+	printReport(t, "xordb — N-gram HDC Encoder", "0", "0.82 (default)", results, elapsed)
 }
 
 // ── Round 2: MiniLM (xordb/embed) ───────────────────────────────────────────
@@ -220,7 +207,6 @@ func TestXorDB_MiniLM_Report(t *testing.T) {
 	defer enc.Close()
 
 	db := xordb.NewWithEncoder(enc,
-		xordb.WithThreshold(0.75),
 		xordb.WithCapacity(1000),
 	)
 
@@ -236,5 +222,5 @@ func TestXorDB_MiniLM_Report(t *testing.T) {
 	}
 	elapsed := time.Since(start)
 
-	printReport(t, "xordb — MiniLM Encoder (xordb/embed)", "onnxruntime_go + model file", "0.75", results, elapsed)
+	printReport(t, "xordb — MiniLM Encoder (xordb/embed)", "onnxruntime_go + model file", "0.82 (default)", results, elapsed)
 }
