@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"xordb/embed"
+	"github.com/Amansingh-afk/xordb/embed"
 )
 
 const (

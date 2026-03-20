@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"xordb"
-	"xordb/embed"
-	"xordb/hdc"
+	"github.com/Amansingh-afk/xordb"
+	"github.com/Amansingh-afk/xordb/embed"
+	"github.com/Amansingh-afk/xordb/hdc"
 )
 
 // These tests require:

@@ -10,7 +10,7 @@ import (
 
 	ort "github.com/yalue/onnxruntime_go"
 
-	"xordb/hdc"
+	"github.com/Amansingh-afk/xordb/hdc"
 )
 
 const (

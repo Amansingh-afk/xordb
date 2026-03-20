@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"xordb/hdc"
+	"github.com/Amansingh-afk/xordb/hdc"
 )
 
 const snapshotVersion = 2

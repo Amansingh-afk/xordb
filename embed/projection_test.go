@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"xordb/hdc"
+	"github.com/Amansingh-afk/xordb/hdc"
 )
 
 func TestNewProjector_Basic(t *testing.T) {

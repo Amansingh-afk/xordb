@@ -4,7 +4,7 @@ import (
 	"container/list"
 	"testing"
 
-	"xordb/hdc"
+	"github.com/Amansingh-afk/xordb/hdc"
 )
 
 func TestLSH_HashDeterminism(t *testing.T) {

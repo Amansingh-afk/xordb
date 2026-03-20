@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"xordb/cache"
-	"xordb/hdc"
+	"github.com/Amansingh-afk/xordb/cache"
+	"github.com/Amansingh-afk/xordb/hdc"
 )
 
 func TestEncodeSnapshot_HeaderMagic(t *testing.T) {

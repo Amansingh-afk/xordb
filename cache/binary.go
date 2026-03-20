@@ -9,7 +9,7 @@ import (
 	"io"
 	"time"
 
-	"xordb/hdc"
+	"github.com/Amansingh-afk/xordb/hdc"
 )
 
 const (

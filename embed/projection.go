@@ -7,7 +7,7 @@ import (
 	"math"
 	"math/rand"
 
-	"xordb/hdc"
+	"github.com/Amansingh-afk/xordb/hdc"
 )
 
 // Projector converts float32 embeddings to binary hdc.Vector via random

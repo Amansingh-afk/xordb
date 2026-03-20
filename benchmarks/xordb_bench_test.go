@@ -12,8 +12,8 @@ import (
 
 	ort "github.com/yalue/onnxruntime_go"
 
-	"xordb"
-	"xordb/embed"
+	"github.com/Amansingh-afk/xordb"
+	"github.com/Amansingh-afk/xordb/embed"
 )
 
 // ── Go benchmarks (machine-readable) ─────────────────────────────────────────

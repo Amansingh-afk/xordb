@@ -2,7 +2,7 @@ package hdc_test
 
 import (
 	"testing"
-	"xordb/hdc"
+	"github.com/Amansingh-afk/xordb/hdc"
 )
 
 const (

@@ -1,5 +1,7 @@
 # xordb
 
+[![CI](https://github.com/Amansingh-afk/xordb/actions/workflows/ci.yml/badge.svg)](https://github.com/Amansingh-afk/xordb/actions/workflows/ci.yml)
+
 ```
   ██╗  ██╗ ██████╗ ██████╗ ██████╗ ██████╗ 
   ╚██╗██╔╝██╔═══██╗██╔══██╗██╔══██╗██╔══██╗
@@ -167,7 +169,7 @@ Good for fuzzy string matching, typo tolerance, and surface-level similarity.
 No setup required.
 
 ```go
-import "xordb"
+import "github.com/Amansingh-afk/xordb"
 
 db := xordb.New(xordb.WithThreshold(0.65))
 
@@ -188,13 +190,13 @@ locally via ONNX Runtime — no API calls, no cloud, no per-query cost.
 
 ```bash
 # One-time: download the model (~90MB)
-go run xordb/embed/cmd/xordb-model download
+go run github.com/Amansingh-afk/xordb/embed/cmd/xordb-model download
 ```
 
 ```go
 import (
-    "xordb"
-    "xordb/embed"
+    "github.com/Amansingh-afk/xordb"
+    "github.com/Amansingh-afk/xordb/embed"
 )
 
 enc, err := embed.NewMiniLMEncoder()
@@ -362,13 +364,13 @@ CLI handles this:
 
 ```bash
 # Download the model
-go run xordb/embed/cmd/xordb-model download
+go run github.com/Amansingh-afk/xordb/embed/cmd/xordb-model download
 
 # Check status
-go run xordb/embed/cmd/xordb-model info
+go run github.com/Amansingh-afk/xordb/embed/cmd/xordb-model info
 
 # Print model path
-go run xordb/embed/cmd/xordb-model path
+go run github.com/Amansingh-afk/xordb/embed/cmd/xordb-model path
 ```
 
 The model is stored at `~/.local/share/xordb/models/all-MiniLM-L6-v2.onnx`

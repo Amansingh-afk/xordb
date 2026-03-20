@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"xordb/cache"
-	"xordb/hdc"
+	"github.com/Amansingh-afk/xordb/cache"
+	"github.com/Amansingh-afk/xordb/hdc"
 )
 
 type Stats struct {
