@@ -16,7 +16,7 @@
 
 Built on Hyperdimensional Computing. Written in Go.
 
-License: GPL-3.0 (see [LICENSE](LICENSE)).
+License: Apache-2.0 (see [LICENSE](LICENSE)).
 
 ---
 
