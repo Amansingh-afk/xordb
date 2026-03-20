@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	miniLMEmbDims         = 384    // MiniLM-L6-v2 output dims
+	miniLMEmbDims         = 384 // MiniLM-L6-v2 output dims
 	defaultMaxSeqLen      = 128
 	defaultBinaryDims     = 10_000
 	defaultProjectionSeed = 0xDB_CAFE
@@ -23,10 +23,10 @@ const (
 // MiniLMEncoder — local MiniLM-L6-v2 via ONNX → 384-dim float → binary HDC vector.
 // Thread-safe after construction.
 type MiniLMEncoder struct {
-	mu        sync.Mutex
-	session   *ort.DynamicAdvancedSession
-	tokenizer *WordPieceTokenizer
-	projector *Projector
+	mu         sync.Mutex
+	session    *ort.DynamicAdvancedSession
+	tokenizer  *WordPieceTokenizer
+	projector  *Projector
 	maxSeqLen  int
 	binaryDims int
 }

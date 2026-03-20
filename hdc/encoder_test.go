@@ -1,9 +1,9 @@
 package hdc_test
 
 import (
+	"github.com/Amansingh-afk/xordb/hdc"
 	"strings"
 	"testing"
-	"github.com/Amansingh-afk/xordb/hdc"
 )
 
 // ── normalize (exported for testing via a thin wrapper) ───────────────────────

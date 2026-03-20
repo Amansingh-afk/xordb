@@ -156,8 +156,8 @@ func TestXorDB_WithMiniLMEncoder_Stats(t *testing.T) {
 	)
 
 	db.Set("hello world", "greeting")
-	db.Get("hello world")   // hit
-	db.Get("random stuff")  // miss
+	db.Get("hello world")  // hit
+	db.Get("random stuff") // miss
 
 	s := db.Stats()
 	if s.Entries != 1 {

@@ -17,10 +17,10 @@ const (
 	formatMagic   = "XRDB"
 	formatVersion = 2
 
-	maxKeyLen     = 1 << 20  // 1 MB
-	maxValLen     = 1 << 24  // 16 MB
-	maxEntryCount = 1 << 24  // ~16M entries
-	maxPayloadLen = 1 << 32  // 4 GB hard cap on payload read
+	maxKeyLen     = 1 << 20 // 1 MB
+	maxValLen     = 1 << 24 // 16 MB
+	maxEntryCount = 1 << 24 // ~16M entries
+	maxPayloadLen = 1 << 32 // 4 GB hard cap on payload read
 )
 
 // EncodeSnapshot writes a binary-encoded snapshot to w.
@@ -130,7 +130,6 @@ func DecodeSnapshot(r io.Reader, dims int) (Snapshot, error) {
 		Entries:  entries,
 	}, nil
 }
-
 
 func decodeEntry(r *bytes.Reader, numWords int) (EntrySnapshot, error) {
 	var keyLen uint32

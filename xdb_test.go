@@ -250,9 +250,9 @@ func TestDB_Len(t *testing.T) {
 func TestDB_Stats_Basic(t *testing.T) {
 	db := xordb.New()
 	db.Set("key", "value")
-	db.Get("key")    // hit
-	db.Get("other")  // miss
-	db.Get("key")    // hit
+	db.Get("key")   // hit
+	db.Get("other") // miss
+	db.Get("key")   // hit
 
 	s := db.Stats()
 	if s.Entries != 1 {

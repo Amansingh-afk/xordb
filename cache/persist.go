@@ -13,7 +13,7 @@ const snapshotVersion = 2
 // EntrySnapshot is a serializable representation of one cache entry.
 type EntrySnapshot struct {
 	Key      string
-	VecData  []uint64  // hdc.Vector raw words; dims stored at Snapshot level
+	VecData  []uint64 // hdc.Vector raw words; dims stored at Snapshot level
 	Value    any
 	Ts       time.Time
 	Deadline time.Time // zero = never expires

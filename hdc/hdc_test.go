@@ -1,8 +1,8 @@
 package hdc_test
 
 import (
-	"testing"
 	"github.com/Amansingh-afk/xordb/hdc"
+	"testing"
 )
 
 const (
