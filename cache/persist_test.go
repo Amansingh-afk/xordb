@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/Amansingh-afk/xordb/cache"
-	"github.com/Amansingh-afk/xordb/hdc"
+	"github.com/Amansingh-afk/hdc-go"
 )
 
 func newTestCache(capacity int, threshold float64) *cache.Cache {

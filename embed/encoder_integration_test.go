@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Amansingh-afk/xordb/hdc"
+	"github.com/Amansingh-afk/hdc-go"
 )
 
 // Integration tests require:

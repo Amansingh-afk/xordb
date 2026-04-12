@@ -8,7 +8,7 @@ import (
 
 	"github.com/Amansingh-afk/xordb"
 	"github.com/Amansingh-afk/xordb/embed"
-	"github.com/Amansingh-afk/xordb/hdc"
+	"github.com/Amansingh-afk/hdc-go"
 )
 
 // These tests require:

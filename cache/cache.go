@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Amansingh-afk/xordb/hdc"
+	"github.com/Amansingh-afk/hdc-go"
 )
 
 type Options struct {

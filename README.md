@@ -11,23 +11,25 @@
   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚═════╝ 
 ```
 
-**The fastest binary semantic cache for LLM apps.**  
+**SQLite for similarity — embed a semantic index in any Go app.**  
 *Offline. Private. Zero cloud costs.*
 
-Built on Hyperdimensional Computing. Written in Go.
+A lightweight similarity store built on [hdc-go](https://github.com/Amansingh-afk/hdc-go)
+(Hyperdimensional Computing). Written in Go.
 
 License: Apache-2.0 (see [LICENSE](LICENSE)).
 
 ---
 
-## Why I built this
+## Why xordb
 
-While building LLM agents, I kept running into the same inference cost problem.
-Every user query — no matter how repetitive — fires a full round-trip to the
-model. You're paying for the same answer over and over.
+Vector databases are powerful but heavy — Pinecone, Weaviate, Qdrant all need
+infrastructure. Sometimes you just need to store things and find similar ones,
+without spinning up a server.
 
-The obvious fix is caching. But normal caches match on exact strings, and users
-never ask the same question the same way twice:
+xordb is the **embeddable** option. Import it, store entries, query by
+similarity. No network, no server, no external dependencies. It runs in-process
+with 11 MB RSS.
 
 ```
 "What is the capital of India?"
@@ -35,35 +37,23 @@ never ask the same question the same way twice:
 "India's capital?"
 ```
 
-Three different strings. Same intent. A hash-based cache misses all of them.
+Three different strings. Same intent. xordb matches them all.
 
-Even the "smart" workaround of structuring prompts with a static system message
-first and the dynamic user query last — hoping the LLM provider's KV-cache
-gives you a prefix hit — barely helps. The user portion still varies, the cache
-miss rate stays high, and you're still paying per token.
-
-I needed a cache that understands *meaning*, not strings. One that runs locally,
-adds zero latency from network calls, and doesn't send my users' queries to yet
-another third-party API.
-
-So I built xordb.
+Think of it as SQLite for similarity — not competing with Postgres, just solving
+a different problem.
 
 ---
 
 ## How it works
 
-xordb encodes text into a **hypervector** — a 10,000-bit binary array where
-meaning is distributed across every bit. Similarity between two hypervectors is
-measured with Hamming distance: a bitwise XNOR + popcount that runs in
-nanoseconds.
+xordb uses [hdc-go](https://github.com/Amansingh-afk/hdc-go) to encode text
+into **hypervectors** — 10,000-bit binary arrays where meaning is distributed
+across every bit. Similarity is measured with Hamming distance: XOR + popcount,
+**67 nanoseconds** per comparison.
 
-Three primitives power everything:
-
-| Operation | Purpose | Implementation |
-|-----------|---------|----------------|
-| `Bundle`  | Combine concepts ("A or B") | majority vote, bit-by-bit |
-| `Bind`    | Associate concepts ("A means B") | XOR (self-inverse) |
-| `Similarity` | How alike are two things? | popcount / Hamming |
+On top of that, xordb adds everything you need for a production store: LSH
+indexing for sub-linear lookups, LRU eviction, TTL expiry, atomic disk
+persistence with CRC checksums, and a thread-safe API.
 
 xordb ships with two encoding modes:
 
@@ -77,13 +67,12 @@ either way.
 
 ---
 
-## Real-world scenarios
+## Use cases
 
 ### LLM response caching
 
-The primary use case. Your agent answers "what is the capital of India?" once,
-and every rephrase — "India's capital city?", "capital of india", "tell me
-india capital" — hits the cache instead of burning another API call.
+Your agent answers "what is the capital of India?" once, and every rephrase
+hits the store instead of burning another API call.
 
 ```go
 db.Set("what is the capital of india", llmResponse)
@@ -92,54 +81,36 @@ v, ok, _ := db.Get("capital city of india")
 // ok=true, v=llmResponse — saved one LLM call
 ```
 
-At 1000 queries/day with 60% semantic overlap, that's 600 fewer inference calls.
-At $0.01/call, ~$180/month saved from a single cache.
+### Intent classification / routing
 
-### Multi-turn agent deduplication
-
-Agents loop. A ReAct agent might re-derive the same tool call three times in one
-conversation. A planning agent might re-ask the same sub-question across
-different branches. xordb catches these before they hit the model.
+Pre-populate with known intents. Incoming queries get routed in sub-millisecond
+without a model.
 
 ```go
-// Agent asks a sub-question during planning
-db.Set("what are the business hours of Acme Corp", toolResult)
+db.Set("check my order status", "order_status")
+db.Set("I want a refund", "refund")
+db.Set("talk to a human", "escalate")
 
-// Later in the same conversation, different phrasing
-v, ok, _ := db.Get("Acme Corp business hours")
-// ok=true — no redundant tool call
+intent, ok, _ := db.Get("where is my package")  // → "order_status"
+intent, ok, _ = db.Get("give me my money back")  // → "refund"
 ```
 
-### RAG retrieval caching
+### Deduplication
 
-Retrieval-Augmented Generation pipelines run an embedding + vector search on
-every query. If your users ask similar questions, you're re-retrieving the same
-documents. Cache the retrieval results:
+Find near-duplicates across datasets. Surface-level or semantic, depending on
+the encoder.
 
 ```go
-db.Set("how do I reset my password", retrievedChunks)
+db.Set("annual report 2024 Q3 financial results", docID1)
 
-db.Get("password reset instructions")
-// Cache hit — skip the entire retrieval pipeline
+_, isDup, sim := db.Get("2024 Q3 annual financial report results")
+// isDup=true, sim≈0.85 — duplicate detected
 ```
 
-### Prompt template deduplication
+### FAQ matching
 
-When you're generating prompts from templates, slight variations in user input
-produce "different" prompts that are semantically identical:
-
-```
-"Summarize this article: [article about climate change]"
-"Please summarize the following article: [same article about climate change]"
-```
-
-xordb catches these because the meaning hasn't changed, even though the wrapper
-text did.
-
-### Chatbot FAQ matching
-
-Pre-populate the cache with your FAQ pairs. User questions get matched
-semantically without needing a full NLP pipeline:
+Pre-populate with FAQ pairs. User questions get matched semantically without
+a full NLP pipeline.
 
 ```go
 db.Set("what is your refund policy", "30-day money-back guarantee")
@@ -149,15 +120,26 @@ db.Get("can I get a refund")       // hits refund policy
 db.Get("how to reach your team")   // hits contact support
 ```
 
-### Edge / offline inference
+### RAG pre-filtering
 
-xordb runs entirely in-process. No Redis, no server, no network. This makes it
-ideal for:
+Use xordb as a fast first pass before expensive vector search. Narrow 1M
+candidates to 1K in microseconds, then re-rank with a full model.
 
-- **Mobile apps** — cache LLM responses on-device
-- **IoT / embedded** — edge devices with intermittent connectivity
-- **Privacy-sensitive apps** — user queries never leave the process
-- **Air-gapped environments** — no external dependencies at runtime
+```go
+db.Set("how do I reset my password", retrievedChunks)
+
+db.Get("password reset instructions")
+// Hit — skip the entire retrieval pipeline
+```
+
+### Edge / offline
+
+xordb runs entirely in-process. No Redis, no server, no network.
+
+- **Mobile apps** — on-device similarity search
+- **IoT / embedded** — 11 MB RSS, runs on Raspberry Pi
+- **Privacy-sensitive apps** — queries never leave the process
+- **Air-gapped environments** — zero external dependencies at runtime
 
 ---
 
@@ -226,11 +208,11 @@ v, ok, sim = db.Get("author of ramayana")
 |---|---|---|
 | **Dependencies** | Zero | `onnxruntime_go` + model file |
 | **Semantic quality** | Surface-level (word overlap) | Near-OpenAI (MTEB benchmarks) |
-| **"capital of india" ↔ "india's capital"** | ✅ hits (shared n-grams) | ✅ hits (semantic match) |
-| **"who wrote ramayana" ↔ "author of ramayana"** | ❌ misses (no word overlap) | ✅ hits (semantic match) |
-| **Encode latency** | ~500µs | ~5ms |
+| **"capital of india" ↔ "india's capital"** | hits (shared n-grams) | hits (semantic match) |
+| **"who wrote ramayana" ↔ "author of ramayana"** | misses (no word overlap) | hits (semantic match) |
+| **Encode latency** | ~500us | ~5ms |
 | **Binary size** | ~2MB | ~2MB + 90MB model |
-| **Best for** | Typo tolerance, fuzzy matching, edge devices | LLM caching, RAG dedup, chatbot FAQ |
+| **Best for** | Typo tolerance, dedup, intent routing, edge | Semantic search, RAG, chatbot FAQ |
 
 ---
 
@@ -263,8 +245,9 @@ db := xordb.New(opts ...Option)
 db := xordb.NewWithEncoder(enc, opts ...Option)
 ```
 
-Accepts any `hdc.Encoder` implementation. Only `WithThreshold` and `WithCapacity`
-are used — encoding options are controlled by the encoder itself.
+Accepts any [`hdc.Encoder`](https://github.com/Amansingh-afk/hdc-go) implementation.
+Only `WithThreshold` and `WithCapacity` are used — encoding options are controlled
+by the encoder itself.
 
 ### MiniLM encoder options
 
@@ -380,7 +363,7 @@ The model is stored at `~/.local/share/xordb/models/all-MiniLM-L6-v2.onnx`
 
 ## Performance
 
-### HDC primitives (`hdc/`)
+### HDC primitives ([hdc-go](https://github.com/Amansingh-afk/hdc-go))
 
 | Operation | Time | Notes |
 |-----------|------|-------|
@@ -466,44 +449,42 @@ bash benchmarks/run_comparison.sh
 
 ---
 
-## Project structure
+## Architecture
 
 ```
-xordb/
+hdc-go/                           ← standalone HDC primitives (zero deps)
+│   Vector, Bundle, Bind, Similarity, Permute
+│   NGramEncoder, Projector (bring your own embeddings)
+│
+xordb/                            ← similarity store (this repo)
 ├── xdb.go                Public API: New, NewWithEncoder, Options, Stats
 ├── xdb_test.go
 │
-├── hdc/
-│   ├── vector.go         Vector type: Bundle, Bind, Similarity, Permute
-│   ├── random.go         Seeded random hypervector generation
-│   ├── encoder.go        Encoder interface + NGramEncoder
-│   ├── pool.go           sync.Pool buffer recycling for encode ops
-│   └── normalize.go      Text normalization
-│
 ├── cache/
-│   ├── cache.go          Cache: Set, Get, Delete, LRU eviction
+│   ├── cache.go          Store: Set, Get, Delete, LRU eviction
 │   ├── lsh.go            LSH index: bit-sampling hash, insert/remove/query
 │   ├── persist.go        Snapshot / LoadSnapshot (in-memory)
-│   ├── binary.go         Binary encode/decode (.xrdb format)
-│   └── cache_test.go
+│   └── binary.go         Binary encode/decode (.xrdb format, CRC-32)
 │
 ├── embed/                        ← separate Go module (xordb/embed)
 │   ├── encoder.go                MiniLMEncoder: ONNX inference + projection
-│   ├── projection.go             Random hyperplane LSH (float32 → binary)
 │   ├── tokenizer.go              BERT WordPiece tokenizer
 │   ├── vocab.go                  Embedded vocabulary (30k tokens, ~227KB)
 │   ├── cmd/xordb-model/main.go   Model download CLI
-│   └── go.mod                    Depends on onnxruntime_go + xordb
+│   └── go.mod                    Depends on onnxruntime_go + hdc-go
 │
 ├── cmd/demo/
 │   └── main.go           Interactive demo
 │
-└── go.mod                Zero dependencies
+└── go.mod                Depends on hdc-go (zero transitive deps)
 ```
 
-The core `xordb` module has **zero dependencies**. The `embed/` module is a
-separate Go module that adds `onnxruntime_go` for local ML inference. You only
-pull in the dependency if you import `xordb/embed`.
+HDC primitives live in [hdc-go](https://github.com/Amansingh-afk/hdc-go), a
+standalone library with zero dependencies. xordb adds the storage layer: LSH
+indexing, LRU eviction, TTL expiry, persistence, and the thread-safe API.
+
+The `embed/` module is a separate Go module that adds `onnxruntime_go` for local
+ML inference. You only pull in that dependency if you import `xordb/embed`.
 
 ---
 
@@ -621,7 +602,10 @@ go run ./cmd/demo/ -repl
 - [x] TTL expiration (lazy eviction on `Get`, global + per-entry override)
 - [x] Disk persistence (custom binary format, CRC-32, atomic writes)
 - [x] LSH indexing for sub-linear lookup at scale
+- [x] Extract HDC primitives into standalone [hdc-go](https://github.com/Amansingh-afk/hdc-go) library
+- [ ] Improve recall to 85%+ (multi-hash HDC, dimensionality tuning)
+- [ ] Batch similarity search API
+- [ ] Namespace / collection support
 - [ ] HTTP sidecar mode
 - [ ] SIMD assembly (`VPAND`, `VPOPCNTQ`)
-- [ ] Additional model support (Nomic Embed, Arctic)
-- [ ] Batch encoding API
+- [ ] Benchmark against FAISS, Annoy, ScaNN

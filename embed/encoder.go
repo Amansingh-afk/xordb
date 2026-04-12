@@ -10,7 +10,7 @@ import (
 
 	ort "github.com/yalue/onnxruntime_go"
 
-	"github.com/Amansingh-afk/xordb/hdc"
+	"github.com/Amansingh-afk/hdc-go"
 )
 
 const (
@@ -26,7 +26,7 @@ type MiniLMEncoder struct {
 	mu         sync.Mutex
 	session    *ort.DynamicAdvancedSession
 	tokenizer  *WordPieceTokenizer
-	projector  *Projector
+	projector  *hdc.Projector
 	maxSeqLen  int
 	binaryDims int
 }
@@ -105,7 +105,7 @@ func NewMiniLMEncoder(opts ...EncoderOption) (*MiniLMEncoder, error) {
 	return &MiniLMEncoder{
 		session:    session,
 		tokenizer:  NewWordPieceTokenizer(vocabData),
-		projector:  NewProjector(miniLMEmbDims, cfg.binaryDims, cfg.projectionSeed),
+		projector:  hdc.NewProjector(miniLMEmbDims, cfg.binaryDims, cfg.projectionSeed),
 		maxSeqLen:  cfg.maxSeqLen,
 		binaryDims: cfg.binaryDims,
 	}, nil
@@ -117,7 +117,7 @@ func (e *MiniLMEncoder) Encode(text string) hdc.Vector {
 	if err != nil {
 		return hdc.New(e.binaryDims)
 	}
-	return e.projector.Project(emb)
+	return e.projector.ProjectFloat(emb)
 }
 
 // Embed returns the raw 384-dim float32 embedding (useful for debugging).

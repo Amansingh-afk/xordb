@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Amansingh-afk/xordb"
-	"github.com/Amansingh-afk/xordb/hdc"
+	"github.com/Amansingh-afk/hdc-go"
 )
 
 // ── construction ──────────────────────────────────────────────────────────────
