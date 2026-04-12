@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Amansingh-afk/xordb"
 	"github.com/Amansingh-afk/hdc-go"
+	"github.com/Amansingh-afk/xordb"
 )
 
 // ── construction ──────────────────────────────────────────────────────────────
