@@ -22,7 +22,7 @@ type Options struct {
 }
 
 func DefaultOptions() Options {
-	return Options{Threshold: 0.82, Capacity: 1024}
+	return Options{Threshold: 0.75, Capacity: 1024}
 }
 
 type Stats struct {

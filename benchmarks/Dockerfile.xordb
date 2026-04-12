@@ -24,9 +24,8 @@ RUN mkdir -p /root/.local/share/xordb/models && \
     https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx
 
 # Copy root module.
-COPY go.mod ./
+COPY go.mod go.sum ./
 COPY xdb.go ./
-COPY hdc/ hdc/
 COPY cache/ cache/
 
 # Copy embed module.
@@ -37,8 +36,7 @@ COPY embed/testdata/ embed/testdata/
 # Copy benchmarks module.
 COPY benchmarks/go.mod benchmarks/go.sum benchmarks/
 COPY benchmarks/data.json benchmarks/
-COPY benchmarks/dataset.go benchmarks/
-COPY benchmarks/xordb_bench_test.go benchmarks/
+COPY benchmarks/*.go benchmarks/
 
 WORKDIR /app/benchmarks
 RUN go mod download

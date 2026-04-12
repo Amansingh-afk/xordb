@@ -12,6 +12,8 @@ import (
 
 	ort "github.com/yalue/onnxruntime_go"
 
+	hdc "github.com/Amansingh-afk/hdc-go"
+
 	"github.com/Amansingh-afk/xordb"
 	"github.com/Amansingh-afk/xordb/embed"
 )
@@ -187,7 +189,7 @@ func TestXorDB_NGram_Report(t *testing.T) {
 	}
 	elapsed := time.Since(start)
 
-	printReport(t, "xordb — N-gram HDC Encoder", "0", "0.82 (default)", results, elapsed)
+	printReport(t, "xordb — N-gram HDC Encoder", "0", "0.75 (default)", results, elapsed)
 }
 
 // ── Round 2: MiniLM (xordb/embed) ───────────────────────────────────────────
@@ -222,5 +224,152 @@ func TestXorDB_MiniLM_Report(t *testing.T) {
 	}
 	elapsed := time.Since(start)
 
-	printReport(t, "xordb — MiniLM Encoder (xordb/embed)", "onnxruntime_go + model file", "0.82 (default)", results, elapsed)
+	printReport(t, "xordb — MiniLM Encoder (xordb/embed)", "onnxruntime_go + model file", "0.75 (default)", results, elapsed)
+}
+
+// ── MiniLM sweep: encode once, test thresholds on raw similarities ──────────
+
+func TestXorDB_MiniLM_ThresholdSweep(t *testing.T) {
+	if p := os.Getenv("ORT_LIB_PATH"); p != "" {
+		ort.SetSharedLibraryPath(p)
+	}
+
+	enc, err := embed.NewMiniLMEncoder()
+	if err != nil {
+		t.Skipf("MiniLM encoder not available: %v", err)
+	}
+	defer enc.Close()
+
+	// Encode all entries once
+	type encoded struct {
+		cachedVec hdc.Vector
+		lookupVec hdc.Vector
+		expectHit bool
+		category  string
+	}
+	entries := make([]encoded, len(Dataset))
+	for i, qp := range Dataset {
+		entries[i] = encoded{
+			cachedVec: enc.Encode(qp.Cached),
+			lookupVec: enc.Encode(qp.Lookup),
+			expectHit: qp.ExpectHit,
+			category:  qp.Category,
+		}
+	}
+
+	// Print similarity distribution
+	var matchSims, nonMatchSims []float64
+	for _, e := range entries {
+		sim := hdc.Similarity(e.cachedVec, e.lookupVec)
+		if e.expectHit {
+			matchSims = append(matchSims, sim)
+		} else {
+			nonMatchSims = append(nonMatchSims, sim)
+		}
+	}
+
+	fmt.Println()
+	fmt.Println("── MiniLM Similarity Distribution ──────────────────────")
+	fmt.Printf("%-12s %8s %8s\n", "sim range", "matches", "non-match")
+	fmt.Println("──────────── ──────── ────────")
+	buckets := []struct{ lo, hi float64 }{
+		{0.40, 0.45}, {0.45, 0.50}, {0.50, 0.55}, {0.55, 0.60},
+		{0.60, 0.65}, {0.65, 0.70}, {0.70, 0.75}, {0.75, 0.80},
+		{0.80, 0.85}, {0.85, 0.90}, {0.90, 0.95}, {0.95, 1.01},
+	}
+	for _, b := range buckets {
+		mc, nc := 0, 0
+		for _, s := range matchSims {
+			if s >= b.lo && s < b.hi {
+				mc++
+			}
+		}
+		for _, s := range nonMatchSims {
+			if s >= b.lo && s < b.hi {
+				nc++
+			}
+		}
+		fmt.Printf("[%.2f, %.2f) %8d %8d\n", b.lo, b.hi, mc, nc)
+	}
+	fmt.Printf("\nMatch:     min=%.4f  max=%.4f  mean=%.4f  (n=%d)\n",
+		minSlice(matchSims), maxSlice(matchSims), meanSlice(matchSims), len(matchSims))
+	fmt.Printf("Non-match: min=%.4f  max=%.4f  mean=%.4f  (n=%d)\n",
+		minSlice(nonMatchSims), maxSlice(nonMatchSims), meanSlice(nonMatchSims), len(nonMatchSims))
+
+	// Sweep thresholds
+	thresholds := []float64{0.55, 0.60, 0.65, 0.70, 0.72, 0.75, 0.78, 0.80, 0.82, 0.85}
+
+	fmt.Println()
+	fmt.Println("── MiniLM Threshold Sweep ──────────────────────────────")
+	fmt.Printf("%-8s %6s %6s %6s %6s %6s %6s %6s\n",
+		"thresh", "TP", "FP", "FN", "TN", "prec%", "rec%", "f1%")
+	fmt.Println("──────── ────── ────── ────── ────── ────── ────── ──────")
+
+	for _, th := range thresholds {
+		var tp, fp, fn, tn int
+		for _, e := range entries {
+			sim := hdc.Similarity(e.cachedVec, e.lookupVec)
+			hit := sim >= th
+			switch {
+			case e.expectHit && hit:
+				tp++
+			case !e.expectHit && !hit:
+				tn++
+			case !e.expectHit && hit:
+				fp++
+			case e.expectHit && !hit:
+				fn++
+			}
+		}
+		prec, rec, f1 := 0.0, 0.0, 0.0
+		if tp+fp > 0 {
+			prec = float64(tp) / float64(tp+fp) * 100
+		}
+		if tp+fn > 0 {
+			rec = float64(tp) / float64(tp+fn) * 100
+		}
+		if prec+rec > 0 {
+			f1 = 2 * prec * rec / (prec + rec)
+		}
+		fmt.Printf("%-8.2f %6d %6d %6d %6d %5.1f%% %5.1f%% %5.1f%%\n",
+			th, tp, fp, fn, tn, prec, rec, f1)
+	}
+	fmt.Println()
+}
+
+func minSlice(s []float64) float64 {
+	if len(s) == 0 {
+		return 0
+	}
+	m := s[0]
+	for _, v := range s[1:] {
+		if v < m {
+			m = v
+		}
+	}
+	return m
+}
+
+func maxSlice(s []float64) float64 {
+	if len(s) == 0 {
+		return 0
+	}
+	m := s[0]
+	for _, v := range s[1:] {
+		if v > m {
+			m = v
+		}
+	}
+	return m
+}
+
+func meanSlice(s []float64) float64 {
+	if len(s) == 0 {
+		return 0
+	}
+	var sum float64
+	for _, v := range s {
+		sum += v
+	}
+	return sum / float64(len(s))
 }

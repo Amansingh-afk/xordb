@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Amansingh-afk/xordb/cache"
 	"github.com/Amansingh-afk/hdc-go"
+	"github.com/Amansingh-afk/xordb/cache"
 )
 
 type Stats struct {
@@ -52,7 +52,7 @@ type dbOptions struct {
 func defaultOptions() dbOptions {
 	return dbOptions{
 		dims:      10000,
-		threshold: 0.82,
+		threshold: 0.75,
 		capacity:  1024,
 		ngram:     3,
 	}
@@ -62,7 +62,7 @@ func defaultOptions() dbOptions {
 // Higher values increase accuracy at the cost of memory and CPU.
 func WithDims(n int) Option { return func(o *dbOptions) { o.dims = n } }
 
-// WithThreshold sets the minimum similarity for a cache hit (default 0.82).
+// WithThreshold sets the minimum similarity for a cache hit (default 0.75).
 // Must be in (0, 1]. Raise to require closer matches; lower to be more permissive.
 func WithThreshold(t float64) Option     { return func(o *dbOptions) { o.threshold = t } }
 func WithCapacity(n int) Option          { return func(o *dbOptions) { o.capacity = n } }

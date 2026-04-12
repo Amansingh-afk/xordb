@@ -11,7 +11,7 @@
   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚═════╝ 
 ```
 
-**SQLite for similarity — embed a semantic index in any Go app.**  
+**SQLite for similarity, embed a semantic index in any Go app.**  
 *Offline. Private. Zero cloud costs.*
 
 A lightweight similarity store built on [hdc-go](https://github.com/Amansingh-afk/hdc-go)
@@ -23,7 +23,7 @@ License: Apache-2.0 (see [LICENSE](LICENSE)).
 
 ## Why xordb
 
-Vector databases are powerful but heavy — Pinecone, Weaviate, Qdrant all need
+Vector databases are powerful but heavy, Pinecone, Weaviate, Qdrant all need
 infrastructure. Sometimes you just need to store things and find similar ones,
 without spinning up a server.
 
@@ -39,7 +39,7 @@ with 11 MB RSS.
 
 Three different strings. Same intent. xordb matches them all.
 
-Think of it as SQLite for similarity — not competing with Postgres, just solving
+Think of it as SQLite for similarity, not competing with Postgres, just solving
 a different problem.
 
 ---
@@ -47,7 +47,7 @@ a different problem.
 ## How it works
 
 xordb uses [hdc-go](https://github.com/Amansingh-afk/hdc-go) to encode text
-into **hypervectors** — 10,000-bit binary arrays where meaning is distributed
+into **hypervectors**: 10,000-bit binary arrays where meaning is distributed
 across every bit. Similarity is measured with Hamming distance: XOR + popcount,
 **67 nanoseconds** per comparison.
 
@@ -78,7 +78,7 @@ hits the store instead of burning another API call.
 db.Set("what is the capital of india", llmResponse)
 
 v, ok, _ := db.Get("capital city of india")
-// ok=true, v=llmResponse — saved one LLM call
+// ok=true, v=llmResponse, saved one LLM call
 ```
 
 ### Intent classification / routing
@@ -104,7 +104,7 @@ the encoder.
 db.Set("annual report 2024 Q3 financial results", docID1)
 
 _, isDup, sim := db.Get("2024 Q3 annual financial report results")
-// isDup=true, sim≈0.85 — duplicate detected
+// isDup=true, sim≈0.85, duplicate detected
 ```
 
 ### FAQ matching
@@ -129,17 +129,17 @@ candidates to 1K in microseconds, then re-rank with a full model.
 db.Set("how do I reset my password", retrievedChunks)
 
 db.Get("password reset instructions")
-// Hit — skip the entire retrieval pipeline
+// Hit, skip the entire retrieval pipeline
 ```
 
 ### Edge / offline
 
 xordb runs entirely in-process. No Redis, no server, no network.
 
-- **Mobile apps** — on-device similarity search
-- **IoT / embedded** — 11 MB RSS, runs on Raspberry Pi
-- **Privacy-sensitive apps** — queries never leave the process
-- **Air-gapped environments** — zero external dependencies at runtime
+- **Mobile apps**: on-device similarity search
+- **IoT / embedded**: 11 MB RSS, runs on Raspberry Pi
+- **Privacy-sensitive apps**: queries never leave the process
+- **Air-gapped environments**: zero external dependencies at runtime
 
 ---
 
@@ -161,14 +161,14 @@ v, ok, sim := db.Get("capital city of india")
 // ok=true, sim≈0.72, v="Delhi"
 
 _, ok, _ = db.Get("how do you bake a chocolate cake")
-// ok=false — unrelated, correctly rejected
+// ok=false, unrelated, correctly rejected
 ```
 
 ### Mode 2: Semantic quality (MiniLM encoder)
 
 Real semantic understanding. "author of ramayana" matches "who wrote ramayana"
 even though the words barely overlap. Runs a quantized MiniLM-L6-v2 model
-locally via ONNX Runtime — no API calls, no cloud, no per-query cost.
+locally via ONNX Runtime, no API calls, no cloud, no per-query cost.
 
 ```bash
 # One-time: download the model (~90MB)
@@ -199,7 +199,7 @@ v, ok, sim := db.Get("india's capital city")
 // ok=true, sim≈0.85+, v="Delhi"
 
 v, ok, sim = db.Get("author of ramayana")
-// ok=true — real semantic match, not just string overlap
+// ok=true, real semantic match, not just string overlap
 ```
 
 ### How to choose
@@ -229,7 +229,7 @@ db := xordb.New(opts ...Option)
 | Option | Default | Description |
 |--------|---------|-------------|
 | `WithDims(n)` | `10000` | Hypervector dimension. Higher = more accurate, more memory. |
-| `WithThreshold(t)` | `0.82` | Minimum similarity for a cache hit. Range: `(0, 1]`. |
+| `WithThreshold(t)` | `0.75` | Minimum similarity for a cache hit. Range: `(0, 1]`. |
 | `WithCapacity(n)` | `1024` | Max entries. Oldest evicted when exceeded (LRU). |
 | `WithNGramSize(n)` | `3` | Character n-gram window. |
 | `WithSeed(s)` | `0` | Encoder seed. DBs with different seeds are incompatible. |
@@ -246,7 +246,7 @@ db := xordb.NewWithEncoder(enc, opts ...Option)
 ```
 
 Accepts any [`hdc.Encoder`](https://github.com/Amansingh-afk/hdc-go) implementation.
-Only `WithThreshold` and `WithCapacity` are used — encoding options are controlled
+Only `WithThreshold` and `WithCapacity` are used, encoding options are controlled
 by the encoder itself.
 
 ### MiniLM encoder options
@@ -314,14 +314,14 @@ type Stats struct {
 db.Save(path string) error
 ```
 Write the cache to disk. Uses a custom binary format (`.xrdb`). The write is
-atomic — data goes to a `.tmp` file, fsynced, then renamed into place. Expired
+atomic, data goes to a `.tmp` file, fsynced, then renamed into place. Expired
 entries are stripped on save.
 
 ```go
 db.Load(path string) error
 ```
 Load a previously saved snapshot. Expired entries are skipped. Merges into the
-live cache — existing entries survive, duplicate keys get overwritten by the
+live cache, existing entries survive, duplicate keys get overwritten by the
 snapshot. Returns a wrapped `os.ErrNotExist` if the file is missing, so you can
 safely call `Load` on first run and check with `errors.Is`.
 
@@ -333,7 +333,7 @@ db.Load("cache.xrdb")
 ```
 
 The binary format includes a CRC-32 checksum over the entry payload. Corrupted
-files are rejected on load. Values are serialized as JSON internally — structs,
+files are rejected on load. Values are serialized as JSON internally, structs,
 maps, slices, and primitives all work without registration. The only caveat:
 values come back as their JSON-decoded types (e.g. `int` becomes `float64`,
 structs become `map[string]any`).
@@ -376,10 +376,10 @@ The model is stored at `~/.local/share/xordb/models/all-MiniLM-L6-v2.onnx`
 
 | Operation | Time (linear) | Time (LSH) | Notes |
 |-----------|---------------|------------|-------|
-| `Set` (n-gram) | 532 µs | — | Encode + insert |
-| `Get` — 100 entries | 460 µs | — | Encode + scan |
-| `Get` — 1,000 entries | 1.2 ms | 1.2 ms | ~Even at 1K |
-| `Get` — 10,000 entries | 3.1 ms | **1.6 ms** | **~1.9× faster with LSH** |
+| `Set` (n-gram) | 532 µs | - | Encode + insert |
+| `Get` (100 entries) | 460 µs | - | Encode + scan |
+| `Get` (1,000 entries) | 1.2 ms | 1.2 ms | ~Even at 1K |
+| `Get` (10,000 entries) | 3.1 ms | **1.6 ms** | **~1.9× faster with LSH** |
 
 Encoding dominates (~460µs for n-gram, ~5ms for MiniLM). Linear scan adds
 ~67µs per 1,000 entries. LSH benefit grows with entry count and data diversity.
@@ -390,7 +390,7 @@ Encoding dominates (~460µs for n-gram, ~5ms for MiniLM). Linear scan adds
 with 3 categories: 310 true semantic matches (paraphrases), 21 true negatives
 (completely unrelated), and 113 hard negatives (same topic, different question).
 Both Docker containers run on the same machine, same dataset, same rules. All
-systems use their default thresholds (xordb: 0.82).
+systems use their default thresholds (xordb: 0.75).
 
 |  | **xordb (n-gram)** | **xordb (MiniLM)** | **GPTCache** |
 |---|---|---|---|
@@ -408,7 +408,7 @@ systems use their default thresholds (xordb: 0.82).
 FAISS/ONNX/SQLite C++ allocations. RSS reflects the true cost.
 
 † MiniLM RSS includes the ONNX Runtime engine (~170 MB) and the loaded model
-weights. This is a fixed one-time cost — it does not grow with cache size. The
+weights. This is a fixed one-time cost, it does not grow with cache size. The
 Go heap (23 MB) is the projector's hyperplane matrix + tokenizer vocabulary.
 
 **Category breakdown:**
@@ -425,18 +425,18 @@ Key takeaways:
   76% of queries that *should not* match. For a semantic cache, this means
   serving wrong answers most of the time on non-matching queries. High recall
   (99%) is meaningless if precision is low.
-- **MiniLM has the best F1 balance** — 73.6% F1 with 86% precision. It
+- **MiniLM has the best F1 balance**: 73.6% F1 with 86% precision. It
   correctly rejects hard negatives (82/113) while still finding most true
   matches (199/310). False positive rate of 24% is manageable and tunable
   via threshold.
-- **N-gram wins on precision and speed** — 84% precision, only 6% FP rate,
+- **N-gram wins on precision and speed**: 84% precision, only 6% FP rate,
   1.1ms/query with zero dependencies and 11 MB RSS. Recall is low (13%)
   because character n-grams can't match paraphrases with different words,
   but when it says "hit", it's almost always right.
 - **GPTCache is 15x slower** than MiniLM per query (284ms vs 19ms), largely
   due to Python overhead and FAISS index lookups.
 - **RSS tells the real memory story.** GPTCache reports 6 MB via Python
-  `tracemalloc`, but the actual process RSS is **323 MB** — FAISS, ONNX
+  `tracemalloc`, but the actual process RSS is **323 MB**: FAISS, ONNX
   Runtime, SQLite, and numpy all allocate outside Python's tracked heap.
   xordb n-gram uses 11 MB total. xordb MiniLM uses 198 MB (mostly the ONNX
   engine, fixed cost).
@@ -514,7 +514,7 @@ is boosted to near-certainty for high-similarity pairs.
 | `WithLSHFallback(false)` | Skip linear scan on miss → faster but may miss edge cases |
 
 The auto-computed defaults target ~74% recall at threshold and ~98% at
-similarity 0.90. With fallback enabled (default), you get exact semantics —
+similarity 0.90. With fallback enabled (default), you get exact semantics, and
 LSH just accelerates the common case.
 
 ```go
@@ -533,13 +533,13 @@ db := xordb.New(
 
 **N-gram encoder is not transformer-quality.** Character n-grams capture surface
 similarity. "capital of India" vs "capital of Nepal" score ~0.77 because they
-share most characters. The default threshold of 0.82 avoids false positives but
+share most characters. The default threshold of 0.75 balances recall and precision but
 also misses looser paraphrases. Use the MiniLM encoder for real semantic matching.
 
 **Linear scan by default at small scale.** Below 256 entries, the cache does a
 full scan on every `Get` (~2ms at 10K entries). At 256+ entries, LSH indexing
 kicks in automatically for sub-linear lookups. With LSH enabled and fallback on
-(default), exact semantics are preserved — LSH narrows candidates first, and a
+(default), exact semantics are preserved, LSH narrows candidates first, and a
 full scan runs only if LSH misses. See the [LSH section](#lsh-indexing) below.
 
 **MiniLM adds binary size.** The ONNX model is ~90MB, downloaded separately.
@@ -558,7 +558,7 @@ calls.
 | Threshold | Behaviour |
 |-----------|-----------|
 | `0.90 – 1.0` | Exact and near-exact matches only |
-| `0.82` (default) | Conservative — low false-positive risk |
+| `0.75` (default) | Good balance for both encoders |
 | `0.70 – 0.80` | Good balance for MiniLM encoder |
 | `0.65 – 0.75` | Captures most paraphrases with n-gram encoder |
 | `< 0.60` | Too permissive for production |

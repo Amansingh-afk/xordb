@@ -34,6 +34,13 @@ docker run --rm xordb-bench go test -v -run TestXorDB_MiniLM_Report -count=1 -ti
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  SWEEP: MiniLM threshold + similarity distribution"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+docker run --rm xordb-bench go test -v -run TestXorDB_MiniLM_ThresholdSweep -count=1 -timeout=300s .
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  ROUND 3: GPTCache (ONNX + FAISS + SQLite)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
