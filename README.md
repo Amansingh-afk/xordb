@@ -39,8 +39,7 @@ with 11 MB RSS.
 
 Three different strings. Same intent. xordb matches them all.
 
-Think of it as SQLite for similarity, not competing with Postgres, just solving
-a different problem.
+Think of it as SQLite for similarity. 
 
 ---
 
