@@ -83,7 +83,8 @@ v, ok, _ := db.Get("capital city of india")
 ### Intent classification / routing
 
 Pre-populate with known intents. Incoming queries get routed in sub-millisecond
-without a model.
+without a model. For a dedicated intent router with a cleaner API, see
+[intent-router](https://github.com/Amansingh-afk/intent-router).
 
 ```go
 db.Set("check my order status", "order_status")
@@ -481,6 +482,9 @@ xordb/                            ← similarity store (this repo)
 HDC primitives live in [hdc-go](https://github.com/Amansingh-afk/hdc-go), a
 standalone library with zero dependencies. xordb adds the storage layer: LSH
 indexing, LRU eviction, TTL expiry, persistence, and the thread-safe API.
+
+See also [intent-router](https://github.com/Amansingh-afk/intent-router) --
+sub-millisecond intent classification built on hdc-go.
 
 The `embed/` module is a separate Go module that adds `onnxruntime_go` for local
 ML inference. You only pull in that dependency if you import `xordb/embed`.
