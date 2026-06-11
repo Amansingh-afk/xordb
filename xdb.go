@@ -90,11 +90,10 @@ func WithLSHFallback(fallback bool) Option {
 	return func(o *dbOptions) { o.lshFallback = &fallback }
 }
 
-// WithRerankK controls the two-stage lookup used when the encoder exposes
-// float embeddings (e.g. xordb/embed MiniLM): the top-K candidates by Hamming
-// distance are reranked with exact cosine on stored int8-quantized embeddings,
-// and the hit threshold applies to the cosine score. 0 = auto (default 16),
-// negative = disable rerank. Ignored for encoders without float embeddings.
+// WithRerankK sets the two-stage rerank window used when the encoder exposes
+// float embeddings (e.g. xordb/embed): top-K Hamming candidates are reranked
+// by exact cosine, and the threshold applies to the cosine score.
+// 0 = auto (16), negative = disable.
 func WithRerankK(k int) Option {
 	return func(o *dbOptions) { o.rerankK = k }
 }

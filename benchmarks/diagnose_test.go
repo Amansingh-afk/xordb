@@ -13,15 +13,9 @@ import (
 	ort "github.com/yalue/onnxruntime_go"
 )
 
-// TestDiagnose_RecallStages measures where recall dies in the MiniLM pipeline:
-//
-//	A. float cosine, brute force        → ceiling
-//	B. binary projection, brute Hamming → quantization loss
-//	C. LSH candidate pruning            → index loss
-//	D. fixed threshold                  → cutoff loss
-//
-// Plus recall@K of the paired entry in binary space — predicts whether a
-// two-stage rerank (Hamming top-K → exact cosine) recovers the ceiling.
+// TestDiagnose_RecallStages measures recall loss per pipeline stage:
+// A float cosine ceiling, B binary quantization, C LSH pruning, D threshold.
+// Plus recall@K of the paired entry in binary space (the rerank window).
 func TestDiagnose_RecallStages(t *testing.T) {
 	if p := os.Getenv("ORT_LIB_PATH"); p != "" {
 		ort.SetSharedLibraryPath(p)
@@ -33,7 +27,6 @@ func TestDiagnose_RecallStages(t *testing.T) {
 	}
 	defer enc.Close()
 
-	// ── Embed everything once (float32, L2-normalized) ──────────────────
 	n := len(Dataset)
 	cachedEmb := make([][]float32, n)
 	lookupEmb := make([][]float32, n)
@@ -52,8 +45,7 @@ func TestDiagnose_RecallStages(t *testing.T) {
 		return bestMatch(n, func(j int) float64 { return cosine32(lookupEmb[i], cachedEmb[j]) })
 	}, []float64{0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90})
 
-	// ── Stage B: 1-bit sign projection, brute Hamming ────────────────────
-	// Same projector params as embed.NewMiniLMEncoder defaults.
+	// Stage B uses the same projector params as embed.NewMiniLMEncoder.
 	const projSeed = 0xDB_CAFE
 	proj1 := hdc.NewProjector(384, 10_000, projSeed)
 	cachedBin := make([]hdc.Vector, n)
@@ -68,10 +60,8 @@ func TestDiagnose_RecallStages(t *testing.T) {
 		return bestMatch(n, func(j int) float64 { return hdc.Similarity(lookupBin[i], cachedBin[j]) })
 	}, []float64{0.55, 0.58, 0.60, 0.62, 0.65, 0.70, 0.75})
 
-	// Score distributions: how much does binarization compress the gap?
 	printDistributions(n, cachedEmb, lookupEmb, cachedBin, lookupBin)
 
-	// recall@K of the paired entry — the two-stage rerank predictor.
 	fmt.Println("\n── recall@K (paired cached entry in binary top-K) ──")
 	printRecallAtK(n, lookupBin, cachedBin)
 
@@ -124,10 +114,9 @@ func TestDiagnose_RecallStages(t *testing.T) {
 	fmt.Println("\n(Stage D = stage B table at threshold 0.75 — the current default.)")
 }
 
-// TestDiagnose_Rerank measures the full xordb pipeline with two-stage cosine
-// rerank enabled (encoder implements cache.FloatEncoder). Sweeps the hit
-// threshold in cosine space and reports both hit-rate metrics and answer
-// correctness (hit returned the paired entry's value, not a lookalike's).
+// TestDiagnose_Rerank sweeps the cosine threshold through the full pipeline
+// with rerank enabled, including answer correctness (right entry, not a
+// lookalike).
 func TestDiagnose_Rerank(t *testing.T) {
 	if p := os.Getenv("ORT_LIB_PATH"); p != "" {
 		ort.SetSharedLibraryPath(p)
@@ -139,8 +128,7 @@ func TestDiagnose_Rerank(t *testing.T) {
 	}
 	defer enc.Close()
 
-	// Threshold 0.01 accepts everything; real thresholds are swept offline
-	// on the returned cosine scores. LSH off → exact top-K semantics.
+	// threshold 0.01 accepts everything; thresholds are swept offline
 	db := xordb.NewWithEncoder(enc,
 		xordb.WithCapacity(1000),
 		xordb.WithThreshold(0.01),
@@ -193,8 +181,6 @@ func TestDiagnose_Rerank(t *testing.T) {
 			th, tp, fp, fn, tn, prec, rec, f1, correctPct)
 	}
 
-	// Category breakdown at the default threshold (0.75): correct outcomes
-	// per category — hit for "match", rejection for "neg"/"hard-neg".
 	fmt.Println("\n── category breakdown @ 0.75 ──")
 	counts := map[string][2]int{} // category → [correct, total]
 	for i, qp := range Dataset {
@@ -224,9 +210,8 @@ func bestMatch(n int, score func(j int) float64) (float64, int) {
 	return best, bestIdx
 }
 
-// sweepStage: for each lookup find the best-scoring cached entry, then sweep
-// hit thresholds and print precision/recall/F1. Mirrors cache.Get semantics
-// (best match above threshold = hit).
+// sweepStage finds each lookup's best-scoring cached entry, then sweeps hit
+// thresholds and prints precision/recall/F1.
 func sweepStage(bestFor func(i int) (float64, int), thresholds []float64) {
 	n := len(Dataset)
 	bestScores := make([]float64, n)
@@ -255,9 +240,8 @@ func sweepStage(bestFor func(i int) (float64, int), thresholds []float64) {
 	}
 }
 
-// printRecallAtK: fraction of expect_hit pairs whose own cached partner
-// appears in the binary top-K. recall@K ≈ 99% ⇒ two-stage rerank recovers
-// the float ceiling.
+// printRecallAtK: fraction of expect_hit pairs whose cached partner appears
+// in the binary top-K.
 func printRecallAtK(n int, lookupBin, cachedBin []hdc.Vector) {
 	ks := []int{1, 5, 10, 25, 50, 100}
 	hits := make([]int, len(ks))

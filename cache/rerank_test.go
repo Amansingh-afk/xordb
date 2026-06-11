@@ -8,9 +8,8 @@ import (
 	hdc "github.com/Amansingh-afk/hdc-go"
 )
 
-// fakeFloatEncoder maps known strings to fixed 8-dim embeddings and projects
-// them to binary via a shared Projector. Unknown strings get a far-away
-// embedding so they never match.
+// fakeFloatEncoder maps known strings to fixed 8-dim embeddings.
+// Unknown strings get a far-away embedding so they never match.
 type fakeFloatEncoder struct {
 	embs map[string][]float32
 	proj *hdc.Projector

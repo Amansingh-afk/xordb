@@ -20,10 +20,7 @@ type Options struct {
 	LSHFallback *bool  // nil or true = fallback to linear scan on LSH miss
 	LSHSeed     uint64 // seed for LSH hash functions
 
-	// RerankK controls two-stage lookup when the encoder implements
-	// FloatEncoder: Hamming top-K candidates are reranked by exact cosine.
-	// 0 = auto (defaultRerankK), negative = disable rerank.
-	RerankK int
+	RerankK int // rerank window for FloatEncoder; 0 = auto, negative = disable
 }
 
 func DefaultOptions() Options {
@@ -67,8 +64,8 @@ type Cache struct {
 	lsh         *lshIndex // nil if LSH disabled
 	lshFallback bool      // fallback to linear scan on LSH miss
 
-	fenc    FloatEncoder // non-nil when encoder supports rerank
-	rerankK int          // top-K candidates kept for cosine rerank
+	fenc    FloatEncoder // non-nil when rerank is enabled
+	rerankK int
 
 	hits          uint64
 	misses        uint64
@@ -106,7 +103,6 @@ func New(enc hdc.Encoder, opts Options) *Cache {
 		lshFallback: fallback,
 	}
 
-	// Enable two-stage rerank when the encoder exposes float embeddings.
 	if fe, ok := enc.(FloatEncoder); ok && opts.RerankK >= 0 {
 		c.fenc = fe
 		c.rerankK = opts.RerankK
@@ -148,8 +144,8 @@ func (c *Cache) SetWithTTL(key string, value any, ttl time.Duration) {
 	c.setWithTTL(key, value, ttl)
 }
 
-// encodeKey produces the binary vector and, when rerank is enabled, the
-// quantized embedding. One model inference: Embed once, then Project.
+// encodeKey — binary vector plus quantized embedding when rerank is enabled.
+// Embed once, then Project — single model inference.
 func (c *Cache) encodeKey(key string) (hdc.Vector, []int8) {
 	if c.fenc != nil {
 		if fe, err := c.fenc.Embed(key); err == nil {
@@ -159,9 +155,8 @@ func (c *Cache) encodeKey(key string) (hdc.Vector, []int8) {
 	return c.enc.Encode(key), nil
 }
 
-// encodeQuery is encodeKey for the lookup side: the query embedding stays
-// float32 so rerank scoring is asymmetric (full-precision query vs
-// quantized entries).
+// encodeQuery — like encodeKey but the embedding stays float32 for
+// asymmetric rerank scoring.
 func (c *Cache) encodeQuery(key string) (hdc.Vector, []float32) {
 	if c.fenc != nil {
 		if fe, err := c.fenc.Embed(key); err == nil {
@@ -228,8 +223,8 @@ func deadlineFrom(now time.Time, ttl time.Duration) time.Time {
 }
 
 // Get returns (value, true, similarity) on hit, (nil, false, 0) on miss.
-// With a FloatEncoder, the similarity is the exact cosine score from the
-// rerank stage; otherwise it is the binary Hamming similarity.
+// With a FloatEncoder the similarity is the cosine score from the rerank
+// stage; otherwise it is Hamming similarity.
 func (c *Cache) Get(key string) (any, bool, float64) {
 	vec, qemb := c.encodeQuery(key)
 
@@ -282,8 +277,7 @@ func (c *Cache) Get(key string) (any, bool, float64) {
 	return bestElem.Value.(*entry).value, true, bestSim
 }
 
-// getRerankLocked — two-stage lookup: Hamming top-K candidates, then exact
-// cosine rerank against quantized embeddings. Threshold applies to cosine.
+// getRerankLocked — two-stage Get: Hamming top-K, then cosine rerank.
 func (c *Cache) getRerankLocked(vec hdc.Vector, qemb []float32) (any, bool, float64) {
 	var bestElem *list.Element
 	var bestScore float64
@@ -313,15 +307,14 @@ func (c *Cache) getRerankLocked(vec hdc.Vector, qemb []float32) (any, bool, floa
 	return bestElem.Value.(*entry).value, true, bestScore
 }
 
-// rerankLocked — stage 1: Hamming similarity selects the top-K candidates
-// (nil candidates = scan all entries); stage 2: exact cosine on stored
-// embeddings. Returns the best entry at or above the threshold.
+// rerankLocked — Hamming top-K over candidates (nil = all entries), then
+// exact cosine. Returns the best entry at or above the threshold.
 func (c *Cache) rerankLocked(vec hdc.Vector, qemb []float32, candidates []*list.Element) (*list.Element, float64) {
 	type cand struct {
 		elem *list.Element
 		sim  float64
 	}
-	top := make([]cand, 0, c.rerankK) // ascending by sim; top[0] is the weakest
+	top := make([]cand, 0, c.rerankK) // ascending; top[0] is the weakest
 	now := time.Now()
 
 	consider := func(elem *list.Element) {
@@ -364,7 +357,7 @@ func (c *Cache) rerankLocked(vec hdc.Vector, qemb []float32, candidates []*list.
 	var bestScore float64
 	for _, cd := range top {
 		e := cd.elem.Value.(*entry)
-		score := cd.sim // entries without a stored embedding keep the Hamming score
+		score := cd.sim // no stored embedding → keep the Hamming score
 		if e.emb != nil {
 			score = cosineQ(qemb, e.emb)
 		}

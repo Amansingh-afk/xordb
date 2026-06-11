@@ -1,16 +1,8 @@
-// Intent routing with xordb: classify user input into known intents without
-// an ML model. Register example phrases per intent, then route queries to
-// the nearest match — sub-millisecond, zero dependencies.
+// Intent routing with xordb: register example phrases per intent, route
+// queries to the nearest match. Uses the built-in n-gram encoder (character
+// overlap, no synonyms); swap in xordb/embed MiniLM for semantic matching.
 //
-// Run:
-//
-//	go run ./examples/intent-routing
-//
-// This uses the built-in n-gram encoder, which matches on character overlap
-// (typos, word order, partial phrasing). It will not match synonyms with no
-// shared words ("car" vs "automobile") — for that, swap in the MiniLM
-// encoder (xordb/embed) and the same code gets full semantic matching plus
-// exact cosine scores via two-stage rerank.
+// Run: go run ./examples/intent-routing
 package main
 
 import (
@@ -25,8 +17,7 @@ func main() {
 		xordb.WithCapacity(256),
 	)
 
-	// Register intents: each example phrase maps to its intent label.
-	// More examples per intent = better coverage.
+	// each example phrase maps to its intent label
 	intents := map[string][]string{
 		"greeting":     {"hello", "hi", "hey there", "good morning", "howdy"},
 		"farewell":     {"goodbye", "bye", "see you later", "take care", "good night"},
@@ -49,7 +40,7 @@ func main() {
 		"what's the status of my delivery",
 		"good evening",
 		"I'd like to return my purchase",
-		"quantum entanglement of neutrinos", // no intent — should miss
+		"quantum entanglement of neutrinos", // should miss
 	}
 
 	fmt.Printf("%-40s %-15s %s\n", "query", "intent", "score")

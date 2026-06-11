@@ -6,19 +6,12 @@ import (
 	"github.com/Amansingh-afk/hdc-go"
 )
 
-// FloatEncoder is implemented by encoders that expose the raw float embedding
-// behind Encode (e.g. xordb/embed MiniLMEncoder). When the cache's encoder
-// implements it, Get runs a two-stage lookup: Hamming distance selects the
-// top-K candidates, then exact cosine on stored int8-quantized embeddings
-// picks the winner. The hit threshold applies to the cosine score.
-//
-// This recovers the recall/precision of the underlying float embeddings while
-// keeping the binary scan speed: quantization compresses the gap between
-// match and non-match scores, so a threshold in Hamming space cannot reach
-// the high-precision operating points that cosine space offers.
+// FloatEncoder is an Encoder that exposes the float embedding behind Encode
+// (e.g. xordb/embed MiniLM). When the cache's encoder implements it, Get runs
+// two-stage: Hamming top-K, then exact cosine on stored int8 embeddings.
+// The hit threshold applies to the cosine score.
 type FloatEncoder interface {
 	hdc.Encoder
-	// Embed returns the raw float embedding for text.
 	Embed(text string) ([]float32, error)
 	// Project converts an embedding from Embed into the binary vector that
 	// Encode would produce for the same text.
@@ -27,8 +20,7 @@ type FloatEncoder interface {
 
 const defaultRerankK = 16
 
-// quantizeInt8 L2-normalizes emb and quantizes each component to int8
-// (scaled by 127). 384-dim embedding → 384 bytes per entry.
+// quantizeInt8 L2-normalizes emb and quantizes each component to int8.
 func quantizeInt8(emb []float32) []int8 {
 	var norm float64
 	for _, v := range emb {
@@ -51,9 +43,8 @@ func quantizeInt8(emb []float32) []int8 {
 	return q
 }
 
-// cosineQ computes cosine similarity between a float query and an
-// int8-quantized document embedding (asymmetric: the query keeps full
-// precision, only the stored side is quantized).
+// cosineQ — cosine between a float query and an int8-quantized entry.
+// Query side keeps full precision (asymmetric scoring).
 func cosineQ(q []float32, d []int8) float64 {
 	if len(q) != len(d) {
 		return 0

@@ -8,7 +8,7 @@ import (
 	"github.com/Amansingh-afk/hdc-go"
 )
 
-const snapshotVersion = 3 // v3 adds per-entry quantized embeddings; v2 still loadable
+const snapshotVersion = 3 // v3 adds embeddings; v2 still loadable
 
 // EntrySnapshot is a serializable representation of one cache entry.
 type EntrySnapshot struct {
@@ -17,7 +17,7 @@ type EntrySnapshot struct {
 	Value    any
 	Ts       time.Time
 	Deadline time.Time // zero = never expires
-	Emb      []int8    // quantized embedding for rerank; nil if absent
+	Emb      []int8    // quantized embedding; nil if absent
 }
 
 // Snapshot is a serializable point-in-time copy of the cache state.
@@ -117,8 +117,7 @@ func (c *Cache) injectLocked(es EntrySnapshot) {
 		deadline: es.Deadline,
 		emb:      es.Emb,
 	}
-	// Snapshots written before rerank existed have no embeddings; recompute
-	// from the key so old data participates in rerank after a reload.
+	// pre-v3 snapshots have no embeddings; recompute from the key
 	if c.fenc != nil && e.emb == nil {
 		if fe, err := c.fenc.Embed(es.Key); err == nil {
 			e.emb = quantizeInt8(fe)

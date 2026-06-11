@@ -11,10 +11,8 @@ import (
 	ort "github.com/yalue/onnxruntime_go"
 )
 
-// TestDiagnose_DimsSweep: how few binary dims can stage 1 use before the
-// true match falls out of the top-16 rerank window? Projection cost, scan
-// cost, and vector memory all scale linearly with dims — smaller is faster
-// and lighter as long as recall@16 holds.
+// TestDiagnose_DimsSweep: recall@K of the rerank window at decreasing binary
+// dims. Projection, scan, and memory scale linearly with dims.
 func TestDiagnose_DimsSweep(t *testing.T) {
 	if p := os.Getenv("ORT_LIB_PATH"); p != "" {
 		ort.SetSharedLibraryPath(p)

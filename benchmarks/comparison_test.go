@@ -15,18 +15,12 @@ import (
 	ort "github.com/yalue/onnxruntime_go"
 )
 
-// Head-to-head: xordb (HDC binary scan + cosine rerank) vs chromem-go
-// (pure-Go brute-force float cosine), both fed the same MiniLM embeddings.
-//
-// Protocol:
-//   - Accuracy: 444 Quora pairs, top-1 above threshold, threshold sweep.
-//   - Perf: 5000 synthetic docs embedded once; store-side ingest and query
-//     are measured with precomputed embeddings so ONNX cost (identical for
-//     both) doesn't mask store differences. End-to-end = store + embed.
+// Head-to-head vs chromem-go, both fed the same MiniLM embeddings.
+// Store-side timings use precomputed embeddings so the (identical) ONNX
+// cost doesn't mask store differences.
 
 // memoEncoder serves precomputed embeddings; projection matches the MiniLM
-// encoder defaults so xordb store-side costs (project + scan + rerank) are
-// measured without ONNX inference.
+// encoder defaults.
 type memoEncoder struct {
 	embs map[string][]float32
 	proj *hdc.Projector
@@ -62,7 +56,6 @@ func TestComparison_Accuracy(t *testing.T) {
 	}
 	defer enc.Close()
 
-	// Embed everything once; both stores get identical vectors.
 	embs := make(map[string][]float32, 2*len(Dataset))
 	for _, qp := range Dataset {
 		for _, s := range []string{qp.Cached, qp.Lookup} {
@@ -76,7 +69,6 @@ func TestComparison_Accuracy(t *testing.T) {
 		}
 	}
 
-	// xordb with rerank (memo encoder = same vectors, no double inference)
 	menc := newMemoEncoder(embs)
 	db := xordb.NewWithEncoder(menc,
 		xordb.WithCapacity(1000),
@@ -93,7 +85,6 @@ func TestComparison_Accuracy(t *testing.T) {
 		}
 	}
 
-	// chromem-go: same embeddings via QueryEmbedding top-1
 	ctx := context.Background()
 	cdb := chromem.NewDB()
 	coll, err := cdb.CreateCollection("bench", nil, func(_ context.Context, text string) ([]float32, error) {
@@ -170,7 +161,6 @@ func TestComparison_Perf(t *testing.T) {
 		queryTexts[i] = fmt.Sprintf("how do I resolve %s issue %d as a customer", topics[i%len(topics)], i%97)
 	}
 
-	// Embed everything once (shared cost, excluded from store-side timings).
 	embStart := time.Now()
 	embs := make(map[string][]float32, nDocs+nQueries)
 	for _, s := range append(append([]string{}, docTexts...), queryTexts...) {
@@ -192,7 +182,6 @@ func TestComparison_Perf(t *testing.T) {
 		return ms.HeapAlloc
 	}
 
-	// ── xordb (store-side: project + binary scan + rerank) ──────────────
 	menc := newMemoEncoder(embs)
 	h0 := heap()
 	db := xordb.NewWithEncoder(menc,
@@ -215,7 +204,6 @@ func TestComparison_Perf(t *testing.T) {
 	}
 	xQuery := time.Since(start) / nQueries
 
-	// ── chromem-go (store-side: float cosine over all docs) ─────────────
 	ctx := context.Background()
 	h0 = heap()
 	cdb := chromem.NewDB()
@@ -228,12 +216,10 @@ func TestComparison_Perf(t *testing.T) {
 	start = time.Now()
 	docs := make([]chromem.Document, nDocs)
 	for i, s := range docTexts {
-		// Deep-copy so chromem's stored float32 vector is counted in its
-		// heap delta (xordb's derived binary+int8 vectors are fresh
-		// allocations and already counted; it discards the float vector).
+		// deep-copy so the stored vector counts in chromem's heap delta
 		docs[i] = chromem.Document{ID: fmt.Sprint(i), Content: s, Embedding: append([]float32(nil), embs[s]...)}
 	}
-	if err := coll.AddDocuments(ctx, docs, 1); err != nil { // concurrency 1 = same as xordb's serial Set
+	if err := coll.AddDocuments(ctx, docs, 1); err != nil { // serial, same as xordb's Set
 		t.Fatal(err)
 	}
 	cIngest := time.Since(start)

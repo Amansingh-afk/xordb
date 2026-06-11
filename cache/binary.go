@@ -15,11 +15,11 @@ import (
 const (
 	headerSize    = 32
 	formatMagic   = "XRDB"
-	formatVersion = 3 // v3 adds per-entry quantized embeddings; v2 still readable
+	formatVersion = 3 // v3 adds embeddings; v2 still readable
 
 	maxKeyLen     = 1 << 20 // 1 MB
 	maxValLen     = 1 << 24 // 16 MB
-	maxEmbLen     = 1 << 16 // 64K dims per quantized embedding
+	maxEmbLen     = 1 << 16 // 64K dims per embedding
 	maxEntryCount = 1 << 24 // ~16M entries
 	maxPayloadLen = 1 << 32 // 4 GB hard cap on payload read
 )
@@ -177,7 +177,7 @@ func decodeEntry(r *bytes.Reader, numWords int, version int) (EntrySnapshot, err
 		return EntrySnapshot{}, err
 	}
 
-	// v3: quantized embedding (length 0 = none)
+	// v3: embedding (length 0 = none)
 	var emb []int8
 	if version >= 3 {
 		var embLen uint32
@@ -255,7 +255,7 @@ func encodeEntry(w *bytes.Buffer, e EntrySnapshot, dims int) error {
 	}
 	w.Write(valJSON)
 
-	// Quantized embedding (v3): length prefix + raw int8 bytes
+	// Embedding (v3): length prefix + raw int8 bytes
 	if len(e.Emb) > maxEmbLen {
 		return fmt.Errorf("entry %q: embedding length %d exceeds maximum %d", e.Key, len(e.Emb), maxEmbLen)
 	}

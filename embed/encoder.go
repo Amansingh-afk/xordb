@@ -16,10 +16,8 @@ import (
 const (
 	miniLMEmbDims    = 384 // MiniLM-L6-v2 output dims
 	defaultMaxSeqLen = 128
-	// 1024 bits: recall@16 of the rerank window stays at 100% (see
-	// benchmarks dims sweep), while projection cost, scan cost, and vector
-	// memory drop ~10x vs the old 10k-bit default. Raise via WithBinaryDims
-	// for very large stores where the top-16 window gets crowded.
+	// 1024 keeps recall@16 of the rerank window at 100% (benchmarks dims
+	// sweep) at ~10x less projection/scan/memory cost than 10k bits.
 	defaultBinaryDims     = 1024
 	defaultProjectionSeed = 0xDB_CAFE
 )
@@ -125,8 +123,7 @@ func (e *MiniLMEncoder) Encode(text string) hdc.Vector {
 }
 
 // Project converts an embedding from Embed into the binary vector Encode
-// would produce for the same text. Together with Embed it satisfies
-// cache.FloatEncoder, enabling two-stage cosine rerank in xordb.
+// would produce for the same text. Satisfies cache.FloatEncoder.
 func (e *MiniLMEncoder) Project(emb []float32) hdc.Vector {
 	return e.projector.ProjectFloat(emb)
 }
