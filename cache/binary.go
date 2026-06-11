@@ -15,10 +15,11 @@ import (
 const (
 	headerSize    = 32
 	formatMagic   = "XRDB"
-	formatVersion = 2
+	formatVersion = 3 // v3 adds per-entry quantized embeddings; v2 still readable
 
 	maxKeyLen     = 1 << 20 // 1 MB
 	maxValLen     = 1 << 24 // 16 MB
+	maxEmbLen     = 1 << 16 // 64K dims per quantized embedding
 	maxEntryCount = 1 << 24 // ~16M entries
 	maxPayloadLen = 1 << 32 // 4 GB hard cap on payload read
 )
@@ -68,8 +69,8 @@ func DecodeSnapshot(r io.Reader, dims int) (Snapshot, error) {
 		return Snapshot{}, fmt.Errorf("cache: invalid magic %q (want %q)", hdr[0:4], formatMagic)
 	}
 	version := binary.LittleEndian.Uint16(hdr[4:6])
-	if version != formatVersion {
-		return Snapshot{}, fmt.Errorf("cache: format version %d unsupported (want %d)", version, formatVersion)
+	if version != 2 && version != formatVersion {
+		return Snapshot{}, fmt.Errorf("cache: format version %d unsupported (want 2 or %d)", version, formatVersion)
 	}
 
 	fileDims := int(binary.LittleEndian.Uint32(hdr[8:12]))
@@ -112,7 +113,7 @@ func DecodeSnapshot(r io.Reader, dims int) (Snapshot, error) {
 	buf := bytes.NewReader(payloadBytes)
 
 	for i := 0; i < count; i++ {
-		e, err := decodeEntry(buf, nw)
+		e, err := decodeEntry(buf, nw, int(version))
 		if err != nil {
 			return Snapshot{}, fmt.Errorf("cache: entry %d: %w", i, err)
 		}
@@ -131,7 +132,7 @@ func DecodeSnapshot(r io.Reader, dims int) (Snapshot, error) {
 	}, nil
 }
 
-func decodeEntry(r *bytes.Reader, numWords int) (EntrySnapshot, error) {
+func decodeEntry(r *bytes.Reader, numWords int, version int) (EntrySnapshot, error) {
 	var keyLen uint32
 	if err := binary.Read(r, binary.LittleEndian, &keyLen); err != nil {
 		return EntrySnapshot{}, err
@@ -176,6 +177,28 @@ func decodeEntry(r *bytes.Reader, numWords int) (EntrySnapshot, error) {
 		return EntrySnapshot{}, err
 	}
 
+	// v3: quantized embedding (length 0 = none)
+	var emb []int8
+	if version >= 3 {
+		var embLen uint32
+		if err := binary.Read(r, binary.LittleEndian, &embLen); err != nil {
+			return EntrySnapshot{}, err
+		}
+		if embLen > maxEmbLen {
+			return EntrySnapshot{}, fmt.Errorf("embedding length %d exceeds maximum %d", embLen, maxEmbLen)
+		}
+		if embLen > 0 {
+			embBuf := make([]byte, embLen)
+			if _, err := io.ReadFull(r, embBuf); err != nil {
+				return EntrySnapshot{}, err
+			}
+			emb = make([]int8, embLen)
+			for i, b := range embBuf {
+				emb[i] = int8(b)
+			}
+		}
+	}
+
 	var dl time.Time
 	if deadline != 0 {
 		dl = time.Unix(0, deadline)
@@ -187,6 +210,7 @@ func decodeEntry(r *bytes.Reader, numWords int) (EntrySnapshot, error) {
 		Value:    value,
 		Ts:       time.Unix(0, ts),
 		Deadline: dl,
+		Emb:      emb,
 	}, nil
 }
 
@@ -230,6 +254,17 @@ func encodeEntry(w *bytes.Buffer, e EntrySnapshot, dims int) error {
 		return err
 	}
 	w.Write(valJSON)
+
+	// Quantized embedding (v3): length prefix + raw int8 bytes
+	if len(e.Emb) > maxEmbLen {
+		return fmt.Errorf("entry %q: embedding length %d exceeds maximum %d", e.Key, len(e.Emb), maxEmbLen)
+	}
+	if err := binary.Write(w, binary.LittleEndian, uint32(len(e.Emb))); err != nil {
+		return err
+	}
+	for _, v := range e.Emb {
+		w.WriteByte(byte(v))
+	}
 
 	return nil
 }

@@ -47,6 +47,8 @@ type dbOptions struct {
 	lshK        int
 	lshL        int
 	lshFallback *bool
+
+	rerankK int
 }
 
 func defaultOptions() dbOptions {
@@ -86,6 +88,15 @@ func WithLSHParams(k, l int) Option {
 // Default: true (preserves exact semantics).
 func WithLSHFallback(fallback bool) Option {
 	return func(o *dbOptions) { o.lshFallback = &fallback }
+}
+
+// WithRerankK controls the two-stage lookup used when the encoder exposes
+// float embeddings (e.g. xordb/embed MiniLM): the top-K candidates by Hamming
+// distance are reranked with exact cosine on stored int8-quantized embeddings,
+// and the hit threshold applies to the cosine score. 0 = auto (default 16),
+// negative = disable rerank. Ignored for encoders without float embeddings.
+func WithRerankK(k int) Option {
+	return func(o *dbOptions) { o.rerankK = k }
 }
 
 // New creates a DB with the built-in n-gram encoder.
@@ -206,5 +217,6 @@ func (o *dbOptions) cacheOpts() cache.Options {
 		LSHL:        o.lshL,
 		LSHFallback: o.lshFallback,
 		LSHSeed:     o.seed,
+		RerankK:     o.rerankK,
 	}
 }

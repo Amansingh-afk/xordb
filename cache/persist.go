@@ -8,7 +8,7 @@ import (
 	"github.com/Amansingh-afk/hdc-go"
 )
 
-const snapshotVersion = 2
+const snapshotVersion = 3 // v3 adds per-entry quantized embeddings; v2 still loadable
 
 // EntrySnapshot is a serializable representation of one cache entry.
 type EntrySnapshot struct {
@@ -17,6 +17,7 @@ type EntrySnapshot struct {
 	Value    any
 	Ts       time.Time
 	Deadline time.Time // zero = never expires
+	Emb      []int8    // quantized embedding for rerank; nil if absent
 }
 
 // Snapshot is a serializable point-in-time copy of the cache state.
@@ -49,6 +50,7 @@ func (c *Cache) Snapshot() Snapshot {
 			Value:    e.value,
 			Ts:       e.ts,
 			Deadline: e.deadline,
+			Emb:      e.emb,
 		})
 	}
 
@@ -69,8 +71,8 @@ func (c *Cache) Snapshot() Snapshot {
 // Entries that are already expired at load time are skipped.
 // Existing keys are overwritten. Returns an error on version or dims mismatch.
 func (c *Cache) LoadSnapshot(s Snapshot) error {
-	if s.Version != snapshotVersion {
-		return fmt.Errorf("cache: snapshot version %d unsupported (want %d)", s.Version, snapshotVersion)
+	if s.Version != 2 && s.Version != snapshotVersion {
+		return fmt.Errorf("cache: snapshot version %d unsupported (want 2 or %d)", s.Version, snapshotVersion)
 	}
 	if s.Dims != 0 && s.Dims != c.dims {
 		return fmt.Errorf("cache: snapshot dims %d does not match cache dims %d", s.Dims, c.dims)
@@ -113,6 +115,14 @@ func (c *Cache) injectLocked(es EntrySnapshot) {
 		value:    es.Value,
 		ts:       es.Ts,
 		deadline: es.Deadline,
+		emb:      es.Emb,
+	}
+	// Snapshots written before rerank existed have no embeddings; recompute
+	// from the key so old data participates in rerank after a reload.
+	if c.fenc != nil && e.emb == nil {
+		if fe, err := c.fenc.Embed(es.Key); err == nil {
+			e.emb = quantizeInt8(fe)
+		}
 	}
 	if c.lsh != nil {
 		e.lshKeys = c.lsh.hashVec(vec.RawData())

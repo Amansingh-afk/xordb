@@ -46,9 +46,17 @@ Think of it as SQLite for similarity.
 ## How it works
 
 xordb uses [hdc-go](https://github.com/Amansingh-afk/hdc-go) to encode text
-into **hypervectors**: 10,000-bit binary arrays where meaning is distributed
-across every bit. Similarity is measured with Hamming distance: XOR + popcount,
-**67 nanoseconds** per comparison.
+into **hypervectors**: binary arrays where meaning is distributed across
+every bit. Similarity is measured with Hamming distance: XOR + popcount,
+nanoseconds per comparison.
+
+With the MiniLM encoder, lookups are **two-stage**: a fast binary Hamming
+scan selects the top-K candidates, then an exact cosine pass over stored
+int8-quantized embeddings picks the winner. The query keeps full float
+precision (asymmetric scoring), and the hit threshold applies to the cosine
+score — so accuracy matches a full float vector store while the scan stays
+bitwise. On our eval set the binary stage keeps the true match in its top-16
+window 100% of the time at just 1024 bits.
 
 On top of that, xordb adds everything you need for a production store: LSH
 indexing for sub-linear lookups, LRU eviction, TTL expiry, atomic disk
@@ -83,8 +91,7 @@ v, ok, _ := db.Get("capital city of india")
 ### Intent classification / routing
 
 Pre-populate with known intents. Incoming queries get routed in sub-millisecond
-without a model. For a dedicated intent router with a cleaner API, see
-[intent-router](https://github.com/Amansingh-afk/intent-router).
+without a model. Runnable demo: [`examples/intent-routing`](examples/intent-routing).
 
 ```go
 db.Set("check my order status", "order_status")
@@ -229,7 +236,7 @@ db := xordb.New(opts ...Option)
 | Option | Default | Description |
 |--------|---------|-------------|
 | `WithDims(n)` | `10000` | Hypervector dimension. Higher = more accurate, more memory. |
-| `WithThreshold(t)` | `0.75` | Minimum similarity for a cache hit. Range: `(0, 1]`. |
+| `WithThreshold(t)` | `0.75` | Minimum similarity for a cache hit. Range: `(0, 1]`. With the MiniLM encoder this is a **cosine** threshold (rerank stage); with the n-gram encoder it is Hamming similarity. |
 | `WithCapacity(n)` | `1024` | Max entries. Oldest evicted when exceeded (LRU). |
 | `WithNGramSize(n)` | `3` | Character n-gram window. |
 | `WithSeed(s)` | `0` | Encoder seed. DBs with different seeds are incompatible. |
@@ -238,6 +245,7 @@ db := xordb.New(opts ...Option)
 | `WithLSH(bool)` | auto | Enable/disable LSH indexing. Auto-enabled when capacity ≥ 256. |
 | `WithLSHParams(k, l)` | auto | Override auto-computed LSH parameters (k=bits sampled, l=tables). |
 | `WithLSHFallback(bool)` | `true` | Fall back to linear scan on LSH miss. Preserves exact semantics. |
+| `WithRerankK(k)` | `16` | Two-stage lookup window when the encoder exposes float embeddings (MiniLM): top-K Hamming candidates are reranked by exact cosine. `-1` disables. |
 
 **With custom encoder (e.g. MiniLM):**
 
@@ -246,8 +254,10 @@ db := xordb.NewWithEncoder(enc, opts ...Option)
 ```
 
 Accepts any [`hdc.Encoder`](https://github.com/Amansingh-afk/hdc-go) implementation.
-Only `WithThreshold` and `WithCapacity` are used, encoding options are controlled
-by the encoder itself.
+Encoding options (`WithDims`, `WithNGramSize`, …) are ignored — the encoder
+controls those. If the encoder also implements `Embed`/`Project` (like the
+MiniLM encoder), two-stage cosine rerank is enabled automatically and
+`WithRerankK` applies.
 
 ### MiniLM encoder options
 
@@ -255,7 +265,7 @@ by the encoder itself.
 enc, err := embed.NewMiniLMEncoder(
     embed.WithModelPath("/path/to/model.onnx"),  // default: auto-detect
     embed.WithMaxSeqLen(128),                      // default: 128
-    embed.WithBinaryDims(10000),                   // default: 10000
+    embed.WithBinaryDims(1024),                    // default: 1024
     embed.WithProjectionSeed(0xDBCAFE),            // default: deterministic
 )
 ```
@@ -392,13 +402,13 @@ with 3 categories: 310 true semantic matches (paraphrases), 21 true negatives
 Both Docker containers run on the same machine, same dataset, same rules. All
 systems use their default thresholds (xordb: 0.75).
 
-|  | **xordb (n-gram)** | **xordb (MiniLM)** | **GPTCache** |
+|  | **xordb (n-gram)** | **xordb (MiniLM)** ‡ | **GPTCache** |
 |---|---|---|---|
-| **Precision** | 83.7% (41/49) | **86.1% (199/231)** | 75.1% (307/409) |
-| **Recall** | 13.2% (41/310) | 64.2% (199/310) | **99.0% (307/310)** |
-| **F1 Score** | 22.8% | **73.6%** | 85.4% |
-| **FP Rate** | **6.0% (8/134)** | 23.9% (32/134) | 76.1% (102/134) |
-| **False neg** | 269 | 111 | **3** |
+| **Precision** | 83.7% (41/49) | **81.4% (275/338)** | 75.1% (307/409) |
+| **Recall** | 13.2% (41/310) | 88.7% (275/310) | **99.0% (307/310)** |
+| **F1 Score** | 22.8% | **84.9%** | 85.4% |
+| **FP Rate** | **6.0% (8/134)** | 47.0% (63/134) | 76.1% (102/134) |
+| **False neg** | 269 | 35 | **3** |
 | **Avg latency** | **1.1ms** | 19.1ms | 283.6ms |
 | **Heap (reported)** | **2.25 MB** | 22.67 MB | 6.36 MB * |
 | **RSS (actual)** | **10.80 MB** | 197.59 MB † | 323.06 MB |
@@ -411,13 +421,20 @@ FAISS/ONNX/SQLite C++ allocations. RSS reflects the true cost.
 weights. This is a fixed one-time cost, it does not grow with cache size. The
 Go heap (23 MB) is the projector's hyperplane matrix + tokenizer vocabulary.
 
+‡ MiniLM accuracy measured with two-stage cosine rerank (the default since
+format v3) at the default 0.75 threshold, which now applies to the cosine
+score. F1 matches the MiniLM float ceiling on this dataset — the binary
+stage no longer costs accuracy. Raise the threshold for higher precision
+(0.90 → 91.3% precision); GPTCache's recall-heavy default is tunable too,
+so compare full curves, not single rows.
+
 **Category breakdown:**
 
-|  | **xordb (n-gram)** | **xordb (MiniLM)** | **GPTCache** |
+|  | **xordb (n-gram)** | **xordb (MiniLM)** ‡ | **GPTCache** |
 |---|---|---|---|
-| match (310) | 41/310 | 199/310 | **307/310** |
-| neg (21) | **21/21** | 20/21 | 14/21 |
-| hard-neg (113) | **105/113** | 82/113 | 18/113 |
+| match (310) | 41/310 | 275/310 | **307/310** |
+| neg (21) | **21/21** | 17/21 | 14/21 |
+| hard-neg (113) | **105/113** | 54/113 | 18/113 |
 
 Key takeaways:
 
@@ -425,10 +442,12 @@ Key takeaways:
   76% of queries that *should not* match. For a semantic cache, this means
   serving wrong answers most of the time on non-matching queries. High recall
   (99%) is meaningless if precision is low.
-- **MiniLM has the best F1 balance**: 73.6% F1 with 86% precision. It
-  correctly rejects hard negatives (82/113) while still finding most true
-  matches (199/310). False positive rate of 24% is manageable and tunable
-  via threshold.
+- **MiniLM with rerank matches GPTCache's F1 (84.9% vs 85.4%)** at 15x lower
+  latency and 38% less RSS, with far better precision (81% vs 75%). The
+  remaining false positives are MiniLM's own limit on the hard-negative set,
+  not xordb's — the pipeline scores within rounding of brute-force float
+  cosine. Tune the threshold to trade recall for precision (0.90 → 91%
+  precision).
 - **N-gram wins on precision and speed**: 84% precision, only 6% FP rate,
   1.1ms/query with zero dependencies and 11 MB RSS. Recall is low (13%)
   because character n-grams can't match paraphrases with different words,
@@ -446,6 +465,30 @@ Reproduce it yourself:
 ```bash
 bash benchmarks/run_comparison.sh
 ```
+
+### Benchmark: xordb vs chromem-go
+
+[chromem-go](https://github.com/philippgille/chromem-go) is the closest
+comparable: a pure-Go embeddable vector store using brute-force float cosine.
+Both stores were fed **identical MiniLM embeddings**; store-side cost is
+measured with precomputed embeddings so the (identical) ONNX inference cost
+doesn't mask the difference. 5,000 docs, 200 queries:
+
+|  | **xordb** | **chromem-go** |
+|---|---|---|
+| **Accuracy (444 Quora pairs)** | F1 85.7% @ 0.70 | F1 85.7% @ 0.70 |
+| **Query (store-side)** | **2.0 ms** | 7.5 ms |
+| **Memory per entry** | **1.5 KB** | 2.1 KB |
+| **Ingest (store-side)** | 1.9s total (projection) | **48 ms** total |
+| **Query (end-to-end incl. embed)** | **24.2 ms** | 29.7 ms |
+
+Accuracy is identical to the decimal — the rerank stage guarantees it. The
+binary scan makes queries ~3.7x faster store-side and entries ~26% smaller
+(128-byte binary vector + 384-byte int8 embedding vs 1.5 KB of float32).
+The trade: xordb pays a one-time projection cost per insert (~0.4 ms);
+end-to-end ingest is dominated by the embedding model for both stores.
+
+Reproduce: `TestComparison_Accuracy` / `TestComparison_Perf` in `benchmarks/`.
 
 ---
 
@@ -482,9 +525,6 @@ xordb/                            ← similarity store (this repo)
 HDC primitives live in [hdc-go](https://github.com/Amansingh-afk/hdc-go), a
 standalone library with zero dependencies. xordb adds the storage layer: LSH
 indexing, LRU eviction, TTL expiry, persistence, and the thread-safe API.
-
-See also [intent-router](https://github.com/Amansingh-afk/intent-router) --
-sub-millisecond intent classification built on hdc-go.
 
 The `embed/` module is a separate Go module that adds `onnxruntime_go` for local
 ML inference. You only pull in that dependency if you import `xordb/embed`.

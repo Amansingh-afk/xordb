@@ -65,8 +65,8 @@ func TestBinary_RoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got.Version != 2 {
-		t.Errorf("version: want 2 got %d", got.Version)
+	if got.Version != 3 {
+		t.Errorf("version: want 3 got %d", got.Version)
 	}
 	if got.Dims != dims {
 		t.Errorf("dims: want %d got %d", dims, got.Dims)
